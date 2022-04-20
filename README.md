@@ -10,7 +10,10 @@ altering the original gameplay.
 
 This project 
 
-Dhewm3 for AmigaOS4 PowerPC with EGL_Wrap, Gl4es, Warp3D NOVA and Opengles2 library 
+Dhewm3 for AmigaOS4 PowerPC with EGL_Wrap, Gl4es, Warp3D NOVA and Opengles2 library
+- A-EON (NOVA and Opengles 2.0) http://www.a-eon.com/
+- GL4es https://github.com/ptitSeb/gl4es
+- EGL_Wrap library http://hunoppc.amiga-projects.net/
 
 This distribution uses these functions of these 4 projects :
 
@@ -69,7 +72,7 @@ Required libraries are not part of the tree. These are:
 -AmigaOS4 4.1
 - Warp3D NOVA from A-EON
 - OpenglES2 from A-EON
--EGL_Wrap library from HunoPPC 
+- EGL_Wrap library from HunoPPC 
 - zlib (static)
 - libjpeg (static)
 - libogg (static)
