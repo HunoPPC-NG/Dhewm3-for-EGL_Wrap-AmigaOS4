@@ -1,0 +1,151 @@
+CC=gcc -O3
+CXX=g++ -O3
+
+INCS = -I "../../../cm" -I "../../../framework" -I "../../../game" -I "../../../idlib" -I "../../../renderer" -I "../../../sound" -I "../../../sys" -I "../../../tools" -I "../../../ui"
+CFLAGS=    $(INCS) -shared -fPIC -Wl,-z,defs  -ffast-math -fno-strict-aliasing -falign-loops=16 -fno-common -fsigned-char -mstrict-align -fpermissive -fno-unsafe-math-optimizations -fno-math-errno -fno-trapping-math -fomit-frame-pointer -fno-strict-aliasing -Wno-sign-compare -Wno-switch -Wno-format-security -static-libgcc -static-libstdc++ -DIOAPI_NO_64 -DNDEBUG -DD3_SIZEOFPTR=4 $(BUILDCFLAGS) $(BUILDCFLAGS2) $(BUILDCFLAGS3)
+CXXFLAGS=$(CFLAGS)
+
+
+all: build-base
+
+HOSTCFLAGS = 
+
+.dirscreated:
+	touch .dirscreated
+
+
+BASEOBJS = \
+    idlib/bv/Bounds.o \
+	idlib/bv/Frustum.o \
+	idlib/bv/Sphere.o \
+	idlib/bv/Box.o \
+	idlib/geometry/DrawVert.o \
+	idlib/geometry/Winding2D.o \
+	idlib/geometry/Surface_SweptSpline.o \
+	idlib/geometry/Winding.o \
+	idlib/geometry/Surface.o \
+	idlib/geometry/Surface_Patch.o \
+	idlib/geometry/TraceModel.o \
+	idlib/geometry/JointTransform.o \
+	idlib/hashing/CRC32.o \
+	idlib/hashing/MD4.o \
+	idlib/hashing/MD5.o \
+	idlib/math/Angles.o \
+	idlib/math/Lcp.o \
+	idlib/math/Math.o \
+	idlib/math/Matrix.o \
+	idlib/math/Ode.o \
+	idlib/math/Plane.o \
+	idlib/math/Pluecker.o \
+	idlib/math/Polynomial.o \
+	idlib/math/Quat.o \
+	idlib/math/Rotation.o \
+	idlib/math/Simd.o \
+	idlib/math/Simd_Generic.o \
+	idlib/math/Simd_AltiVec.o \
+	idlib/math/Simd_MMX.o \
+	idlib/math/Simd_3DNow.o \
+	idlib/math/Simd_SSE.o \
+	idlib/math/Simd_SSE2.o \
+	idlib/math/Simd_SSE3.o \
+	idlib/math/Vector.o \
+	idlib/BitMsg.o \
+	idlib/LangDict.o \
+	idlib/Lexer.o \
+	idlib/Lib.o \
+	idlib/containers/HashIndex.o \
+	idlib/Dict.o \
+	idlib/Str.o \
+	idlib/Parser.o \
+	idlib/MapFile.o \
+	idlib/CmdArgs.o \
+	idlib/Token.o \
+	idlib/Base64.o \
+	idlib/Timer.o \
+	idlib/Heap.o \
+    game/AF.o \
+	game/AFEntity.o \
+	game/Actor.o \
+	game/Camera.o \
+	game/Entity.o \
+	game/BrittleFracture.o \
+	game/Fx.o \
+	game/GameEdit.o \
+	game/Game_local.o \
+	game/Game_network.o \
+	game/Item.o \
+	game/IK.o \
+	game/Light.o \
+	game/Misc.o \
+	game/Mover.o \
+	game/Moveable.o \
+	game/MultiplayerGame.o \
+	game/Player.o \
+	game/PlayerIcon.o \
+	game/PlayerView.o \
+	game/Projectile.o \
+	game/Pvs.o \
+	game/SecurityCamera.o \
+	game/SmokeParticles.o \
+	game/Sound.o \
+	game/Target.o \
+	game/Trigger.o \
+	game/Weapon.o \
+	game/WorldSpawn.o \
+	game/ai/AAS.o \
+	game/ai/AAS_debug.o \
+	game/ai/AAS_pathing.o \
+	game/ai/AAS_routing.o \
+	game/ai/AI.o \
+	game/ai/AI_events.o \
+	game/ai/AI_pathing.o \
+	game/ai/AI_Vagary.o \
+	game/gamesys/DebugGraph.o \
+	game/gamesys/Class.o \
+	game/gamesys/Event.o \
+	game/gamesys/SaveGame.o \
+	game/gamesys/SysCmds.o \
+	game/gamesys/SysCvar.o \
+	game/gamesys/TypeInfo.o \
+	game/anim/Anim.o \
+	game/anim/Anim_Blend.o \
+	game/anim/Anim_Import.o \
+	game/anim/Anim_Testmodel.o \
+	game/script/Script_Compiler.o \
+	game/script/Script_Interpreter.o \
+	game/script/Script_Program.o \
+	game/script/Script_Thread.o \
+	game/physics/Clip.o \
+	game/physics/Force.o \
+	game/physics/Force_Constant.o \
+	game/physics/Force_Drag.o \
+	game/physics/Force_Field.o \
+	game/physics/Force_Spring.o \
+	game/physics/Physics.o \
+	game/physics/Physics_AF.o \
+	game/physics/Physics_Actor.o \
+	game/physics/Physics_Base.o \
+	game/physics/Physics_Monster.o \
+	game/physics/Physics_Parametric.o \
+	game/physics/Physics_Player.o \
+	game/physics/Physics_RigidBody.o \
+	game/physics/Physics_Static.o \
+	game/physics/Physics_StaticMulti.o \
+	game/physics/Push.o
+
+
+
+
+build-base:
+	mkdir -p objects/game objects/game/idlib objects/game/game objects/game/game/idlib objects/game/game/ai objects/game/game/anim objects/game/game/gamesys objects/game/game/physics objects/game/game/script objects/game/idlib/bv objects/game/idlib/hashing objects/game/idlib/geometry objects/game/idlib/math objects/game/idlib/containers
+	cd objects/game &&  $(MAKE) -f ../../Makefile_BASE.so base.so VPATH=../../../ BUILDCFLAGS=-DGAME_DLL  BUILDCFLAGS2=-D__DOOM_DLL__ BUILDCFLAGS3=-Dbase_EXPORTS
+
+base.so: .dirscreated $(BASEOBJS)
+	$(CXX) -shared $(CFLAGS) $(BASEOBJS) ../../linkerscript -o $@
+
+
+
+clean:
+	rm -rf objects/game
+
+.PHONY: clean build-base

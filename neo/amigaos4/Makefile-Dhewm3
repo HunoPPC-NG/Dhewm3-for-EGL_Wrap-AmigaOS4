@@ -1,0 +1,233 @@
+CC=gcc -O3
+CXX=g++ -O3
+
+INCS = -I "../../../cm" -I "../../../framework" -I "../../../game" -I "../../../idlib" -I "../../../renderer" -I "../../../sound" -I "../../../sys" -I "../../../tools" -I "../../../ui"
+CFLAGS=  $(BUILDCFLAGS) $(INCS) -Wall -DNDEBUG -D_choice_dhewm3 -Dbase_EXPORTS -DD3_SIZEOFPTR=4 -D__DOOM_DLL__ -ffast-math -fvisibility=hidden -fomit-frame-pointer -fno-strict-aliasing -Wno-sign-compare -Wno-switch -Wno-format-security $(BUILDCFLAGS) $(BUILDCFLAGS2) $(BUILDCFLAGS3)
+
+
+all: build-core 
+
+HOSTCFLAGS = 
+
+.dirscreated:
+	touch .dirscreated
+
+DOOM3OBJS = \
+    renderer/Cinematic.o \
+	renderer/GuiModel.o \
+	renderer/Image_files.o \
+	renderer/Image_init.o \
+	renderer/Image_load.o \
+	renderer/Image_process.o \
+	renderer/Image_program.o \
+	renderer/Interaction.o \
+	renderer/Material.o \
+	renderer/MegaTexture.o \
+	renderer/Model.o \
+	renderer/ModelDecal.o \
+	renderer/ModelManager.o \
+	renderer/ModelOverlay.o \
+	renderer/Model_beam.o \
+	renderer/Model_ase.o \
+	renderer/Model_liquid.o \
+	renderer/Model_lwo.o \
+	renderer/Model_ma.o \
+	renderer/Model_md3.o \
+	renderer/Model_md5.o \
+	renderer/Model_prt.o \
+	renderer/Model_sprite.o \
+	renderer/RenderEntity.o \
+	renderer/RenderSystem.o \
+	renderer/RenderSystem_init.o \
+	renderer/RenderWorld.o \
+	renderer/RenderWorld_demo.o \
+	renderer/RenderWorld_load.o \
+	renderer/RenderWorld_portals.o \
+	renderer/VertexCache.o \
+    renderer/draw_arb.o \
+	renderer/draw_arb2.o \
+	renderer/draw_common.o \
+	renderer/tr_backend.o \
+	renderer/tr_deform.o \
+	renderer/tr_font.o \
+	renderer/tr_guisurf.o \
+	renderer/tr_light.o \
+	renderer/tr_lightrun.o \
+	renderer/tr_main.o \
+	renderer/tr_orderIndexes.o \
+	renderer/tr_polytope.o \
+	renderer/tr_render.o \
+	renderer/tr_rendertools.o \
+	renderer/tr_shadowbounds.o \
+	renderer/tr_stencilshadow.o \
+	renderer/tr_subview.o \
+	renderer/tr_trace.o \
+	renderer/tr_trisurf.o \
+	renderer/tr_turboshadow.o \
+    framework/CVarSystem.o \
+	framework/CmdSystem.o \
+	framework/Common.o \
+	framework/Compressor.o \
+	framework/Console.o \
+	framework/DemoFile.o \
+	framework/DeclAF.o \
+	framework/DeclEntityDef.o \
+	framework/DeclFX.o \
+	framework/DeclManager.o \
+	framework/DeclParticle.o \
+	framework/DeclPDA.o \
+	framework/DeclSkin.o \
+	framework/DeclTable.o \
+	framework/EditField.o \
+	framework/EventLoop.o \
+	framework/File.o \
+	framework/FileSystem.o \
+	framework/KeyInput.o \
+	framework/UsercmdGen.o \
+	framework/Session_menu.o \
+	framework/Session.o \
+	framework/async/AsyncClient.o \
+	framework/async/AsyncNetwork.o \
+	framework/async/AsyncServer.o \
+	framework/async/MsgChannel.o \
+	framework/async/NetworkSystem.o \
+	framework/async/ServerScan.o \
+	framework/minizip/ioapi.o \
+	framework/minizip/unzip.o \
+    cm/CollisionModel_contacts.o \
+	cm/CollisionModel_contents.o \
+	cm/CollisionModel_debug.o \
+	cm/CollisionModel_files.o \
+	cm/CollisionModel_load.o \
+	cm/CollisionModel_rotate.o \
+	cm/CollisionModel_trace.o \
+	cm/CollisionModel_translate.o \
+    tools/compilers/dmap/dmap.o \
+	tools/compilers/dmap/facebsp.o \
+	tools/compilers/dmap/gldraw.o \
+	tools/compilers/dmap/glfile.o \
+	tools/compilers/dmap/leakfile.o \
+	tools/compilers/dmap/map.o \
+	tools/compilers/dmap/optimize.o \
+	tools/compilers/dmap/output.o \
+	tools/compilers/dmap/portals.o \
+	tools/compilers/dmap/shadowopt3.o \
+	tools/compilers/dmap/tritjunction.o \
+	tools/compilers/dmap/tritools.o \
+	tools/compilers/dmap/ubrush.o \
+	tools/compilers/dmap/usurface.o \
+    tools/compilers/aas/AASBuild.o \
+	tools/compilers/aas/AASBuild_file.o \
+	tools/compilers/aas/AASBuild_gravity.o \
+	tools/compilers/aas/AASBuild_ledge.o \
+	tools/compilers/aas/AASBuild_merge.o \
+	tools/compilers/aas/AASCluster.o \
+	tools/compilers/aas/AASFile.o \
+	tools/compilers/aas/AASFile_optimize.o \
+	tools/compilers/aas/AASFile_sample.o \
+	tools/compilers/aas/AASReach.o \
+	tools/compilers/aas/AASFileManager.o \
+	tools/compilers/aas/Brush.o \
+	tools/compilers/aas/BrushBSP.o \
+    tools/compilers/roqvq/NSBitmapImageRep.o \
+	tools/compilers/roqvq/codec.o \
+	tools/compilers/roqvq/roq.o \
+	tools/compilers/roqvq/roqParam.o \
+    tools/compilers/renderbump/renderbump.o \
+	tools/guied/GEWindowWrapper_stub.o \
+    sound/snd_cache.o \
+	sound/snd_decoder.o \
+	sound/snd_efxfile.o \
+	sound/snd_emitter.o \
+	sound/snd_shader.o \
+	sound/snd_system.o \
+	sound/snd_wavefile.o \
+	sound/snd_world.o \
+    ui/BindWindow.o \
+	ui/ChoiceWindow.o \
+	ui/DeviceContext.o \
+	ui/EditWindow.o \
+	ui/FieldWindow.o \
+	ui/GameBearShootWindow.o \
+	ui/GameBustOutWindow.o \
+	ui/GameSSDWindow.o \
+	ui/GuiScript.o \
+	ui/ListGUI.o \
+	ui/ListWindow.o \
+	ui/MarkerWindow.o \
+	ui/RegExp.o \
+	ui/RenderWindow.o \
+	ui/SimpleWindow.o \
+	ui/SliderWindow.o \
+	ui/UserInterface.o \
+	ui/Window.o \
+	ui/Winvar.o \
+	idlib/bv/Bounds.o \
+	idlib/bv/Frustum.o \
+	idlib/bv/Sphere.o \
+	idlib/bv/Box.o \
+	idlib/geometry/DrawVert.o \
+	idlib/geometry/Winding2D.o \
+	idlib/geometry/Surface_SweptSpline.o \
+	idlib/geometry/Winding.o \
+	idlib/geometry/Surface.o \
+	idlib/geometry/Surface_Patch.o \
+	idlib/geometry/TraceModel.o \
+	idlib/geometry/JointTransform.o \
+	idlib/hashing/CRC32.o \
+	idlib/hashing/MD4.o \
+	idlib/hashing/MD5.o \
+	idlib/math/Angles.o \
+	idlib/math/Lcp.o \
+	idlib/math/Math.o \
+	idlib/math/Matrix.o \
+	idlib/math/Ode.o \
+	idlib/math/Plane.o \
+	idlib/math/Pluecker.o \
+	idlib/math/Polynomial.o \
+	idlib/math/Quat.o \
+	idlib/math/Rotation.o \
+	idlib/math/Simd.o \
+	idlib/math/Simd_Generic.o \
+	idlib/math/Simd_AltiVec.o \
+	idlib/math/Simd_MMX.o \
+	idlib/math/Simd_3DNow.o \
+	idlib/math/Simd_SSE.o \
+	idlib/math/Simd_SSE2.o \
+	idlib/math/Simd_SSE3.o \
+	idlib/math/Vector.o \
+	idlib/BitMsg.o \
+	idlib/LangDict.o \
+	idlib/Lexer.o \
+	idlib/Lib.o \
+	idlib/containers/HashIndex.o \
+	idlib/Dict.o \
+	idlib/Str.o \
+	idlib/Parser.o \
+	idlib/MapFile.o \
+	idlib/CmdArgs.o \
+	idlib/Token.o \
+	idlib/Base64.o \
+	idlib/Timer.o \
+	idlib/Heap.o \
+    sys/cpu.o \
+	sys/threads.o \
+	sys/events.o \
+    sys/glimp.o \
+	sys/sys_local.o \
+	sys/posix/posix_net.o \
+	sys/posix/posix_main.o \
+	sys/linux/main.o
+
+
+build-core:
+	mkdir -p objects/dhewm3 objects/dhewm3/game objects/dhewm3/renderer objects/dhewm3/framework objects/dhewm3/framework/async objects/dhewm3/framework/minizip objects/dhewm3/cm objects/dhewm3/dmap objects/dhewm3/aas objects/dhewm3/roq objects/dhewm3/renderbump objects/dhewm3/snd objects/dhewm3/ui objects/dhewm3/tools objects/dhewm3/tools/compilers objects/dhewm3/tools/compilers/dmap objects/dhewm3/tools/compilers/aas objects/dhewm3/tools/compilers/renderbump objects/dhewm3/tools/compilers/roqvq objects/dhewm3/tools/guied objects/dhewm3/sound objects/dhewm3/idlib objects/dhewm3/idlib/bv objects/dhewm3/idlib/geometry objects/dhewm3/idlib/hashing  objects/dhewm3/idlib/math objects/dhewm3/idlib/containers objects/dhewm3/sys objects/dhewm3/sys/posix objects/dhewm3/sys/linux objects/dhewm3/game objects/dhewm3/game/idlib objects/dhewm3/game/ai objects/dhewm3/game/anim objects/dhewm3/game/gamesys objects/dhewm3/game/physics objects/dhewm3/game/script 
+	cd objects/dhewm3 && $(MAKE) -f ../../Makefile-Dhewm3 dhewm3 VPATH=../../../ BUILDCFLAGS=-D__DOOM_DLL__  BUILDCFLAGS2=  BUILDCFLAGS3=
+
+dhewm3: .dirscreated $(DOOM3OBJS)
+	$(CC) $(HOSTCFLAGS) $(CFLAGS) $(DOOM3OBJS)  -ldldoom -ljpegdoom3 -lopenal -lvorbisfile -lvorbis -logg -lz -lcurl -lssl -lcrypto -lrtmp -lpthread -lstdc++ -lSDLegl_wrap -use-dynld -legl_wrap -lauto -o $@
+
+clean:
+	rm -rf objects
+
+.PHONY: clean build-core
