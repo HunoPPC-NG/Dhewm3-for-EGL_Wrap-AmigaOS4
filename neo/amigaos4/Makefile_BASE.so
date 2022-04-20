@@ -2,7 +2,7 @@ CC=gcc -O3
 CXX=g++ -O3
 
 INCS = -I "../../../cm" -I "../../../framework" -I "../../../game" -I "../../../idlib" -I "../../../renderer" -I "../../../sound" -I "../../../sys" -I "../../../tools" -I "../../../ui"
-CFLAGS=    $(INCS) -shared -fPIC -Wl,-z,defs  -ffast-math -fno-strict-aliasing -falign-loops=16 -fno-common -fsigned-char -mstrict-align -fpermissive -fno-unsafe-math-optimizations -fno-math-errno -fno-trapping-math -fomit-frame-pointer -fno-strict-aliasing -Wno-sign-compare -Wno-switch -Wno-format-security -static-libgcc -static-libstdc++ -DIOAPI_NO_64 -DNDEBUG -DD3_SIZEOFPTR=4 $(BUILDCFLAGS) $(BUILDCFLAGS2) $(BUILDCFLAGS3)
+CFLAGS=    $(INCS) -shared -fPIC -ffast-math -fno-strict-aliasing -falign-loops=16 -fno-common -fsigned-char -mstrict-align -fpermissive -fno-unsafe-math-optimizations -fno-math-errno -fno-trapping-math -fomit-frame-pointer -fno-strict-aliasing -Wno-sign-compare -Wno-switch -Wno-format-security -static-libgcc -static-libstdc++ -DIOAPI_NO_64 -DNDEBUG -DD3_SIZEOFPTR=4 $(BUILDCFLAGS) $(BUILDCFLAGS2) $(BUILDCFLAGS3)
 CXXFLAGS=$(CFLAGS)
 
 
@@ -63,7 +63,7 @@ BASEOBJS = \
 	idlib/Base64.o \
 	idlib/Timer.o \
 	idlib/Heap.o \
-    game/AF.o \
+        game/AF.o \
 	game/AFEntity.o \
 	game/Actor.o \
 	game/Camera.o \
