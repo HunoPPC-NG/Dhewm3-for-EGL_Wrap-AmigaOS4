@@ -13,7 +13,7 @@ HOSTCFLAGS =
 	touch .dirscreated
 
 DOOM3OBJS = \
-    renderer/Cinematic.o \
+        renderer/Cinematic.o \
 	renderer/GuiModel.o \
 	renderer/Image_files.o \
 	renderer/Image_init.o \
@@ -44,7 +44,8 @@ DOOM3OBJS = \
 	renderer/RenderWorld_load.o \
 	renderer/RenderWorld_portals.o \
 	renderer/VertexCache.o \
-    renderer/draw_arb.o \
+        renderer/draw_arb.o \
+	renderer/draw_glsl.o \
 	renderer/draw_arb2.o \
 	renderer/draw_common.o \
 	renderer/tr_backend.o \
@@ -64,7 +65,7 @@ DOOM3OBJS = \
 	renderer/tr_trace.o \
 	renderer/tr_trisurf.o \
 	renderer/tr_turboshadow.o \
-    framework/CVarSystem.o \
+        framework/CVarSystem.o \
 	framework/CmdSystem.o \
 	framework/Common.o \
 	framework/Compressor.o \
@@ -94,7 +95,7 @@ DOOM3OBJS = \
 	framework/async/ServerScan.o \
 	framework/minizip/ioapi.o \
 	framework/minizip/unzip.o \
-    cm/CollisionModel_contacts.o \
+        cm/CollisionModel_contacts.o \
 	cm/CollisionModel_contents.o \
 	cm/CollisionModel_debug.o \
 	cm/CollisionModel_files.o \
@@ -102,7 +103,7 @@ DOOM3OBJS = \
 	cm/CollisionModel_rotate.o \
 	cm/CollisionModel_trace.o \
 	cm/CollisionModel_translate.o \
-    tools/compilers/dmap/dmap.o \
+        tools/compilers/dmap/dmap.o \
 	tools/compilers/dmap/facebsp.o \
 	tools/compilers/dmap/gldraw.o \
 	tools/compilers/dmap/glfile.o \
@@ -116,7 +117,7 @@ DOOM3OBJS = \
 	tools/compilers/dmap/tritools.o \
 	tools/compilers/dmap/ubrush.o \
 	tools/compilers/dmap/usurface.o \
-    tools/compilers/aas/AASBuild.o \
+        tools/compilers/aas/AASBuild.o \
 	tools/compilers/aas/AASBuild_file.o \
 	tools/compilers/aas/AASBuild_gravity.o \
 	tools/compilers/aas/AASBuild_ledge.o \
@@ -129,13 +130,13 @@ DOOM3OBJS = \
 	tools/compilers/aas/AASFileManager.o \
 	tools/compilers/aas/Brush.o \
 	tools/compilers/aas/BrushBSP.o \
-    tools/compilers/roqvq/NSBitmapImageRep.o \
+        tools/compilers/roqvq/NSBitmapImageRep.o \
 	tools/compilers/roqvq/codec.o \
 	tools/compilers/roqvq/roq.o \
 	tools/compilers/roqvq/roqParam.o \
-    tools/compilers/renderbump/renderbump.o \
+        tools/compilers/renderbump/renderbump.o \
 	tools/guied/GEWindowWrapper_stub.o \
-    sound/snd_cache.o \
+        sound/snd_cache.o \
 	sound/snd_decoder.o \
 	sound/snd_efxfile.o \
 	sound/snd_emitter.o \
@@ -143,7 +144,7 @@ DOOM3OBJS = \
 	sound/snd_system.o \
 	sound/snd_wavefile.o \
 	sound/snd_world.o \
-    ui/BindWindow.o \
+        ui/BindWindow.o \
 	ui/ChoiceWindow.o \
 	ui/DeviceContext.o \
 	ui/EditWindow.o \
@@ -210,10 +211,10 @@ DOOM3OBJS = \
 	idlib/Base64.o \
 	idlib/Timer.o \
 	idlib/Heap.o \
-    sys/cpu.o \
+        sys/cpu.o \
 	sys/threads.o \
 	sys/events.o \
-    sys/glimp.o \
+        sys/glimp.o \
 	sys/sys_local.o \
 	sys/posix/posix_net.o \
 	sys/posix/posix_main.o \
