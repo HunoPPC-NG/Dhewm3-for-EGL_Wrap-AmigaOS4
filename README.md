@@ -69,7 +69,7 @@ The build system is based on CMake: http://cmake.org/
 
 Required libraries are not part of the tree. These are:
 
--AmigaOS4 4.1
+- AmigaOS 4.1 PowerPC
 - Warp3D NOVA from A-EON
 - OpenglES2 from A-EON
 - EGL_Wrap library from HunoPPC 
