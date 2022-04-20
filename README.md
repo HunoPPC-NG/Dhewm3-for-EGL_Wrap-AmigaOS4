@@ -65,8 +65,6 @@ https://www.humblebundle.com/store/p/doom3_resofevil_storefront
 
 ## Compiling
 
-The build system is based on CMake: http://cmake.org/
-
 Required libraries are not part of the tree. These are:
 
 - AmigaOS 4.1 PowerPC
@@ -74,12 +72,12 @@ Required libraries are not part of the tree. These are:
 - OpenglES2 from A-EON
 - EGL_Wrap library from HunoPPC 
 - zlib (static)
-- libjpeg (static)
+- libjpeg8 (static)
 - libogg (static)
 - libvorbis (static)
 - libvorbisfile (may be part of libvorbis) (static)
-- OpenAL (OpenAL Soft required, Creative's and Apple's versions are made of fail) (static)
-- SDL v1.2 (static)
+- OpenAL Soft  (static)
+- EGLSDL v1.3 
 
 ## Back End Rendering of Stencil Shadows
 
