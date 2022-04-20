@@ -14,7 +14,7 @@ Dhewm3 for AmigaOS4 PowerPC with EGL_Wrap, Gl4es, Warp3D NOVA and Opengles2 libr
 
 This distribution uses these functions of these 4 projects :
 
-**The project is hosted at:** https://github.com/dhewm
+**The project is hosted at:** https://github.com/HunoPPC-NG/Dhewm3-for-EGL_Wrap-AmigaOS4
 
 Dhewm3 for Update and support a standard code of engine  : https://github.com/dhewm
 
