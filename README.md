@@ -15,13 +15,15 @@ Dhewm3 for AmigaOS4 PowerPC with EGL_Wrap, Gl4es, Warp3D NOVA and Opengles2 libr
 - GL4es https://github.com/ptitSeb/gl4es
 - EGL_Wrap library http://hunoppc.amiga-projects.net/
 
-This distribution uses these functions of these 4 projects :
+This distribution uses these functions of these 5 projects :
 
 **The project is hosted at:** https://github.com/HunoPPC-NG/Dhewm3-for-EGL_Wrap-AmigaOS4
 
 Dhewm3 for Update and support a standard code of engine  : https://github.com/dhewm
 
 Dante OpenglES2 for a source code of GLES2 : https://github.com/omcfadde/dante
+
+Dante's GLSL Shaders : https://github.com/omcfadde/gl2progs
 
 Doom3 Original source code for arb Driver : https://github.com/id-Software/DOOM-3
 
@@ -33,7 +35,7 @@ Gl4ES for Opengl renderer : https://github.com/ptitSeb/gl4es
 
 Compared to the original _DOOM 3_, the changes of _dhewm 3_ worth mentioning are:
 
-- SDL for low level OS support, OpenGL and input handling
+- EGLSDL for low level OS support, OpenGL and input handling
 - OpenAL for audio output, all OS specific audio backends are gone
 - OpenAL EFX for EAX reverb effects (read: EAX-like sound effects on all platforms/hardware)
 - Better support for widescreen (and arbitrary display resolutions)
