@@ -29,6 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 //hunoppc
 #include "../sys/platform.h"
 #include "../idlib/Timer.h"
+#include "../framework/FileSystem.h"
 
 #include "../script/Script_Thread.h"
 #include "Game_local.h"
