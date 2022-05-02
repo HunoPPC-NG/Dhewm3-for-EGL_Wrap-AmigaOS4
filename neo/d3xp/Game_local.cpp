@@ -27,6 +27,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 //hunoppc
+#include "../sys/Stub_SDL_endian.h"	//rev 2021 dhewm 3 1.5.1 updates
 #include "../sys/platform.h"
 #ifdef GAME_DLL
 #else
