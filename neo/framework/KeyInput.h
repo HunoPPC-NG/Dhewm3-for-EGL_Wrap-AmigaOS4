@@ -198,7 +198,12 @@ typedef enum {
 
 	K_PRINT_SCR	= 252,	// SysRq / PrintScr
 	K_RIGHT_ALT = 253,	// used by some languages as "Alt-Gr"
-    // DG: map all relevant scancodes from SDL to K_SC_* (taken from Yamagi Quake II)
+
+	// DG: added the following two
+	K_RIGHT_CTRL = 254,
+	K_RIGHT_SHIFT = 255,
+
+	// DG: map all relevant scancodes from SDL to K_SC_* (taken from Yamagi Quake II)
 	// (relevant are ones that are likely to be keyboardlayout-dependent,
 	//  i.e. printable characters of sorts, *not* Ctrl, Alt, F1, Del, ...)
 	K_FIRST_SCANCODE = 256,
@@ -267,7 +272,7 @@ typedef enum {
 
 	// FIXME: maybe move everything joystick related here
 
-	K_LAST_KEY  = 254	// this better be < 256!
+	K_LAST_KEY // DG: this said "this better be < 256!"; I hope I fixed all places in code assuming this..
 } keyNum_t;
 
 enum { K_NUM_SCANCODES = K_LAST_SCANCODE - K_FIRST_SCANCODE + 1 };

@@ -998,7 +998,6 @@ Activates or Deactivates a tool
 */
 void idCommonLocal::ActivateTool( bool active ) {
 	com_editorActive = active;
-	Sys_GrabMouseCursor( !active );
 }
 
 /*
@@ -2661,9 +2660,7 @@ void idCommonLocal::LoadGameDLL( void ) {
 	gameDLL = 0;
 
 	sys->DLL_GetFileName(fs_game, dll, sizeof(dll));
-    common->Printf("loaded Dll by name HunoPPC\n");
 	LoadGameDLLbyName(dll, s);
-    common->Printf("Dll by name is loaded  HunoPPC\n");
 
 	// there was no gamelib for this mod, use default one from base game
 	if (!gameDLL) {
@@ -2678,9 +2675,6 @@ void idCommonLocal::LoadGameDLL( void ) {
 		return;
 	}
 
-	common->Printf("loaded game library '%s'.\n", s.c_str());
-
-    common->Printf("checking on Dll all functions HunoPPC\n");
 
 	GetGameAPI = (GetGameAPI_t) Sys_DLL_GetProcAddress( gameDLL, "GetGameAPI" );
 	if ( !GetGameAPI ) {
@@ -2688,9 +2682,7 @@ void idCommonLocal::LoadGameDLL( void ) {
 		gameDLL = 0;
 		common->FatalError( "couldn't find game DLL API" );
 		return;
-	}else{
-    common->Printf( "engine find a game DLL API, yes!!!\n" );
-    }
+	}
 
 	gameImport.version					= GAME_API_VERSION;
 	gameImport.sys						= ::sys;
@@ -2721,13 +2713,10 @@ void idCommonLocal::LoadGameDLL( void ) {
 	game								= gameExport.game;
 	gameEdit							= gameExport.gameEdit;
 
-    common->Printf("game and gameEdit is OK HunoPPC\n");
-
 #endif
 
 	// initialize the game object
 	if ( game != NULL ) {
-    common->Printf("game InitRunning HunoPPC\n");
 		game->Init();
 	}
 }
@@ -2931,31 +2920,14 @@ void idCommonLocal::Init( int argc, char **argv ) {
 	// we want to use the SDL event queue for dedicated servers. That
 	// requires video to be initialized, so we just use the dummy
 	// driver for headless boxen
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	SDL_setenv("SDL_VIDEODRIVER", "dummy", 1);
-#else
 	char dummy[] = "SDL_VIDEODRIVER=dummy\0";
 	SDL_putenv(dummy);
 #endif
-#endif
 
-	if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK)) // init joystick to work around SDL 2.0.9 bug #4391
+	if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK)) 
 		Sys_Error("Error while initializing SDL: %s", SDL_GetError());
 
 	Sys_InitThreads();
-
-    common->Printf("Threads Init HunoPPC\n");
-
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	/* Force the window to minimize when focus is lost. This was the
-	 * default behavior until SDL 2.0.12 and changed with 2.0.14.
-	 * The windows staying maximized has some odd implications for
-	 * window ordering under Windows and some X11 window managers
-	 * like kwin. See:
-	 *  * https://github.com/libsdl-org/SDL/issues/4039
-	 *  * https://github.com/libsdl-org/SDL/issues/3656 */
-	SDL_SetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "1" );
-#endif
 
 	try {
 
@@ -2967,78 +2939,58 @@ void idCommonLocal::Init( int argc, char **argv ) {
 
 		// initialize idLib
 		idLib::Init();
-        common->Printf( "Init ENGINE: idlib is OK\n" );
 
 		// clear warning buffer
 		ClearWarnings( GAME_NAME " initialization" );
 
 		// parse command line options
 		ParseCommandLine( argc, argv );
-        common->Printf( "Init ENGINE: ParseCommandline is OK\n" );
 
 		// init console command system
 		cmdSystem->Init();
-        common->Printf( "Init ENGINE: cmdSystem is OK\n" );
 
 		// init CVar system
 		cvarSystem->Init();
-        common->Printf( "Init ENGINE: cvarSystem is OK\n" );
 
 		// start file logging right away, before early console or whatever
 		StartupVariable( "win_outputDebugString", false );
-        common->Printf( "Init ENGINE: startupVariable is OK\n" );
 
 		// register all static CVars
 		idCVar::RegisterStaticVars();
-        common->Printf( "Init ENGINE: RegisterStaticVars is OK\n" );
 
+        /*
 		// print engine version
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-		SDL_version sdlv;
-		SDL_GetVersion(&sdlv);
-#else
 		SDL_version sdlv = *SDL_Linked_Version();
-#endif
 		Printf( "%s using SDL v%u.%u.%u\n",
 				version.string, sdlv.major, sdlv.minor, sdlv.patch );
+		*/
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-		Printf( "SDL video driver: %s\n", SDL_GetCurrentVideoDriver() );
-#endif
 
 		// initialize key input/binding, done early so bind command exists
 		idKeyInput::Init();
-        common->Printf( "Init ENGINE: idKeyInput is OK\n" );
 
 		// init the console so we can take prints
 		console->Init();
-        common->Printf( "Init ENGINE: console is OK\n" );
 
 		// get architecture info
 		Sys_Init();
-        common->Printf( "Init ENGINE: get architecture is OK\n" );
 
 		// initialize networking
         #if !defined(__amigaos4__)
 		Sys_InitNetworking();
-        common->Printf( "Init ENGINE: networking is OK\n" );
 		#endif
 		
 		// override cvars from command line
 		StartupVariable( NULL, false );
-        common->Printf( "Init ENGINE: startupVariable is OK\n" );
 
 		// set fpu double extended precision
 		Sys_FPU_SetPrecision();
-        common->Printf( "Init ENGINE: FPU précision is OK\n" );
 
 		// initialize processor specific SIMD implementation
 		InitSIMD();
-        common->Printf( "Init ENGINE: SIMD is OK\n" );
 
 		// init commands
 		InitCommands();
-        common->Printf( "Init ENGINE: commands is OK\n" );
 
 #ifdef ID_WRITE_VERSION
 		config_compressor = idCompressor::AllocArithmetic();
@@ -3046,24 +2998,19 @@ void idCommonLocal::Init( int argc, char **argv ) {
 
 		// game specific initialization
 		InitGame();
-        common->Printf( "Init ENGINE: game specific initialization is OK\n" );
 
 		// don't add startup commands if no CD key is present
 #if ID_ENFORCE_KEY
 		if ( !session->CDKeysAreValid( false ) || !AddStartupCommands() ) {
-        common->Printf( "Init ENGINE: session->CDKeysAreValid phase 1\n" );
 #else
 		if ( !AddStartupCommands() ) {
-            common->Printf( "Init ENGINE: session->CDKeysAreValid phase 2\n" );
 #endif
 			// if the user didn't give any commands, run default action
 		    session->StartMenu( true );
-            common->Printf( "Init ENGINE: session start menu is OK\n" );
 		}
 
 		// print all warnings queued during initialization
 		PrintWarnings();
-        common->Printf( "Init ENGINE: print Warnings is OK\n" );
 
 #ifdef	ID_DEDICATED
 		Printf( "\nType 'help' for dedicated server info.\n\n" );
@@ -3071,14 +3018,11 @@ void idCommonLocal::Init( int argc, char **argv ) {
 
 		// remove any prints from the notify lines
 		console->ClearNotifyLines();
-        common->Printf( "Init ENGINE: clearNotifyLines is OK\n" );
 
 		ClearCommandLine();
-        common->Printf( "Init ENGINE: clear command line is OK\n" );
 
 		// load the persistent console history
 		console->LoadHistory();
-        common->Printf( "Init ENGINE: load History is OK\n" );
 
 		com_fullyInitialized = true;
 	}
@@ -3088,7 +3032,6 @@ void idCommonLocal::Init( int argc, char **argv ) {
 	}
 
 	async_timer = SDL_AddTimer(USERCMD_MSEC, AsyncTimer, NULL);
-    common->Printf( "Init ENGINE: async timer is OK\n" );
 
 	if (!async_timer)
 		Sys_Error("Error while starting the async timer: %s", SDL_GetError());
@@ -3276,7 +3219,11 @@ void idCommonLocal::InitGame( void ) {
 	if ( sysDetect ) {
 		SetMachineSpec();
 		Com_ExecMachineSpec_f( args );
-		cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 6 );
+		#ifdef __amigaos4__
+		cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 2 );
+		#else
+		cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 6 );	
+		#endif
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
 		cmdSystem->ExecuteCommandBuffer();
 	}

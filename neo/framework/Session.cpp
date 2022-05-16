@@ -2944,8 +2944,6 @@ void idSessionLocal::RunGameTic() {
 	}
 }
 
-int DebugEngine = 0;
-
 /*
 ===============
 idSessionLocal::Init
@@ -3000,64 +2998,38 @@ void idSessionLocal::Init() {
 
 	cmdSystem->AddCommand( "hitch", Session_Hitch_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "hitches the game" );
 
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 1--\n" );}
-
 	// the same idRenderWorld will be used for all games
 	// and demos, insuring that level specific models
 	// will be freed
 	rw = renderSystem->AllocRenderWorld();
 	sw = soundSystem->AllocSoundWorld( rw );
 
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 2--\n" );}
-
 	menuSoundWorld = soundSystem->AllocSoundWorld( rw );
 
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 3--\n" );}
-
 	// we have a single instance of the main menu
-  
 	guiMainMenu = uiManager->FindGui( "guis/mainmenu.gui", true, false, true );
 	if (!guiMainMenu) {
 		guiMainMenu = uiManager->FindGui( "guis/demo_mainmenu.gui", true, false, true );
 		demoversion = (guiMainMenu != NULL);
 	}
 	guiMainMenu_MapList = uiManager->AllocListGUI();
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 4--\n" );}
-    
 	guiMainMenu_MapList->Config( guiMainMenu, "mapList" );
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 5--\n" );}
-    
 	idAsyncNetwork::client.serverList.GUIConfig( guiMainMenu, "serverList" );
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 6--\n" );}
-    
 	guiRestartMenu = uiManager->FindGui( "guis/restart.gui", true, false, true );
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 7--\n" );}
-    
 	guiGameOver = uiManager->FindGui( "guis/gameover.gui", true, false, true );
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 8--\n" );}
-    
 	guiMsg = uiManager->FindGui( "guis/msg.gui", true, false, true );
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 9--\n" );}
-   
 	guiTakeNotes = uiManager->FindGui( "guis/takeNotes.gui", true, false, true );
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 10--\n" );}
-    
 	guiIntro = uiManager->FindGui( "guis/intro.gui", true, false, true );
 
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 11--\n" );}
-
 	whiteMaterial = declManager->FindMaterial( "_white" );
-
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 12--\n" );}
 
 	guiInGame = NULL;
 	guiTest = NULL;
 
 	guiActive = NULL;
 	guiHandle = NULL;
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 13--\n" );}
+
 	ReadCDKey();
-    if(DebugEngine==1){common->Printf( "Debug session Local --Phase 14--\n" );}
 }
 
 /*

@@ -50,7 +50,9 @@ If you have questions concerning this license or the applicable additional terms
 #define	BASE_GAMEDIR					"base"
 
 // filenames
+#ifndef CONFIG_FILE
 #define CONFIG_FILE						"doom3.cfg"
+#endif
 
 // base folder where the source code lives
 #define SOURCE_CODE_BASE_FOLDER			"neo"
@@ -95,7 +97,7 @@ If you have questions concerning this license or the applicable additional terms
 #define EDITOR_WINDOWTEXT				"DOOMEdit"
 
 // win32 info
-#define WIN32_CONSOLE_CLASS				"doom3 WinConsole"
+#define WIN32_CONSOLE_CLASS				"dhewm 3 WinConsole"
 
 // Linux info
 #define LINUX_DEFAULT_PATH				"/PROGDIR"

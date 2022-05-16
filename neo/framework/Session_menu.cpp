@@ -58,38 +58,30 @@ idSessionLocal::StartMainMenu
 */
 void idSessionLocal::StartMenu( bool playIntro ) {
 	if ( guiActive == guiMainMenu ) {
-     //   common->Printf( "Debug StartMenu -- Phase 1 --\n" );
 		return;
 	}
 
 	if ( readDemo ) {
-       // common->Printf( "Debug StartMenu -- Phase 2 --\n" );
 		// if we're playing a demo, esc kills it
 		UnloadMap();
 	}
 
 	// pause the game sound world
 	if ( sw != NULL && !sw->IsPaused() ) {
-       // common->Printf( "Debug StartMenu -- Phase 3 --\n" );
 		sw->Pause();
 	}
 
 	// start playing the menu sounds
 	soundSystem->SetPlayingSoundWorld( menuSoundWorld );
-   // common->Printf( "Debug StartMenu -- Phase 4 --\n" );
 
 	SetGUI( guiMainMenu, NULL );
-   // common->Printf( "Debug StartMenu -- Phase 5 --\n" );
 	guiMainMenu->HandleNamedEvent( playIntro ? "playIntro" : "noIntro" );
-   // common->Printf( "Debug StartMenu -- Phase 6 -- play intro == %d\n", playIntro );
 
 
 	if(fileSystem->HasD3XP()) {
 		guiMainMenu->SetStateString("game_list", common->GetLanguageDict()->GetString( "#str_07202" ));
-      //  common->Printf( "Debug StartMenu -- Phase 7 --\n" );
 	} else {
 		guiMainMenu->SetStateString("game_list", common->GetLanguageDict()->GetString( "#str_07212" ));
-     //   common->Printf( "Debug StartMenu -- Phase 8 --\n" );
 	}
 
 	console->Close();
@@ -105,35 +97,26 @@ void idSessionLocal::SetGUI( idUserInterface *gui, HandleGuiCommand_t handle ) {
 	guiActive = gui;
 	guiHandle = handle;
 	if ( guiMsgRestore ) {
-      //  common->Printf( "Debug SetGUI -- Phase 1 --\n" );
 		common->DPrintf( "idSessionLocal::SetGUI: cleared an active message box\n" );
 		guiMsgRestore = NULL;
 	}
 	if ( !guiActive ) {
-      //  common->Printf( "Debug SetGUI -- Phase 2 --\n" );
 		return;
 	}
 
 	if ( guiActive == guiMainMenu ) {
-      //  common->Printf( "Debug SetGUI -- Phase 3 --\n" );
 		SetSaveGameGuiVars();
-      //  common->Printf( "Debug SetGUI -- Phase 4 --\n" );
 		SetMainMenuGuiVars();
-      //  common->Printf( "Debug SetGUI -- Phase 5 --\n" );
 	} else if ( guiActive == guiRestartMenu ) {
-      //  common->Printf( "Debug SetGUI -- Phase 6 --\n" );
 		SetSaveGameGuiVars();
 	}
 
 	sysEvent_t  ev;
 	memset( &ev, 0, sizeof( ev ) );
-   // common->Printf( "Debug SetGUI -- Phase 7 --\n" );
 	ev.evType = SE_NONE;
 
 	guiActive->HandleEvent( &ev, com_frameTime );
-   // common->Printf( "Debug SetGUI -- Phase 8 --\n" );
 	guiActive->Activate( true, com_frameTime );
-   // common->Printf( "Debug SetGUI -- Phase 9 --\n" );
 }
 
 /*
@@ -249,28 +232,19 @@ idSessionLocal::SetModsMenuGuiVars
 */
 void idSessionLocal::SetModsMenuGuiVars( void ) {
 	int i;
-   // common->Printf( "Debug SetModsMenuGuiVars -- Phase 0 --\n" );
 	idModList *list = fileSystem->ListMods();
-   // common->Printf( "Debug SetModsMenuGuiVars -- Phase 1 --\n" );
 
 	modsList.SetNum( list->GetNumMods() );
-   // common->Printf( "Debug SetModsMenuGuiVars -- Phase 2 --\n" );
 
 	// Build the gui list
 	for ( i = 0; i < list->GetNumMods(); i++ ) {
-   //     common->Printf( "Debug SetModsMenuGuiVars -- Phase 3 --\n" );
 		guiActive->SetStateString( va("modsList_item_%i", i), list->GetDescription( i ) );
-    //    common->Printf( "Debug SetModsMenuGuiVars -- Phase 4 --\n" );
 		modsList[i] = list->GetMod( i );
-   //   common->Printf( "Debug SetModsMenuGuiVars -- Phase 5 --\n" );
 	}
 	guiActive->DeleteStateVar( va("modsList_item_%i", list->GetNumMods()) );
-   // common->Printf( "Debug SetModsMenuGuiVars -- Phase 6 --\n" );
 	guiActive->SetStateString( "modsList_sel_0", "-1" );
-   // common->Printf( "Debug SetModsMenuGuiVars -- Phase 7 --\n" );
 
 	fileSystem->FreeModList( list );
-   // common->Printf( "Debug SetModsMenuGuiVars -- Phase 8 --\n" );
 }
 
 
@@ -284,35 +258,27 @@ void idSessionLocal::SetMainMenuSkin( void ) {
 	idStr str = cvarSystem->GetCVarString( "mod_validSkins" );
 	idStr uiSkin = cvarSystem->GetCVarString( "ui_skin" );
 	idStr skin;
-
 	int skinId = 1;
 	int count = 1;
 	while ( str.Length() ) {
 		int n = str.Find( ";" );
-       // common->Printf( "Debug SetMainMenuSkin -- Phase 1 --\n" );
 		if ( n >= 0 ) {
 			skin = str.Left( n );
 			str = str.Right( str.Length() - n - 1 );
-       //     common->Printf( "Debug SetMainMenuSkin -- Phase 2 --\n" );
 		} else {
 			skin = str;
 			str = "";
-       //     common->Printf( "Debug SetMainMenuSkin -- Phase 3 --\n" );
 		}
 		if ( skin.Icmp( uiSkin ) == 0 ) {
-        //    common->Printf( "Debug SetMainMenuSkin -- Phase 4 --\n" );
 			skinId = count;
 		}
 		count++;
-       // common->Printf( "Debug SetMainMenuSkin -- Phase 5 --\n" );
 	}
 
 	for ( int i = 0; i < count; i++ ) {
 		guiMainMenu->SetStateInt( va( "skin%i", i+1 ), 0 );
-      //  common->Printf( "Debug SetMainMenuSkin -- Phase 6 --\n" );
 	}
 	guiMainMenu->SetStateInt( va( "skin%i", skinId ), 1 );
-   // common->Printf( "Debug SetMainMenuSkin -- Phase 7 --\n" );
 }
 
 /*
@@ -333,52 +299,34 @@ void idSessionLocal::SetMainMenuGuiVars( void ) {
 	guiMainMenu->SetStateString( "serverlist_sel_0", "-1" );
 	guiMainMenu->SetStateString( "serverlist_selid_0", "-1" );
 
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 1 --\n" );
-
 	guiMainMenu->SetStateInt( "com_machineSpec", com_machineSpec.GetInteger() );
-
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 2 --\n" );
 
 	// "inetGame" will hold a hand-typed inet address, which is not archived to a cvar
 	guiMainMenu->SetStateString( "inetGame", "" );
 
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 3 --\n" );
-
 	// key bind names
 	guiMainMenu->SetKeyBindingNames();
-
-   // common->Printf( "Debug SetMainMenuGuiVars -- Phase 4 --\n" );
 
 	// flag for in-game menu
 	if ( mapSpawned ) {
 		guiMainMenu->SetStateString( "inGame", IsMultiplayer() ? "2" : "1" );
-     //   common->Printf( "Debug SetMainMenuGuiVars -- Phase 5 --\n" );
 	} else {
 		guiMainMenu->SetStateString( "inGame", "0" );
-     //   common->Printf( "Debug SetMainMenuGuiVars -- Phase 6 --\n" );
 	}
 
 	SetCDKeyGuiVars( );
- //   common->Printf( "Debug SetMainMenuGuiVars -- Phase 7 --\n" );
 	guiMainMenu->SetStateString( "nightmare", cvarSystem->GetCVarBool( "g_nightmare" ) ? "1" : "0" );
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 8 --\n" );
 	guiMainMenu->SetStateString( "browser_levelshot", "guis/assets/splash/pdtempa" );
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 9 --\n" );
+
 	SetMainMenuSkin();
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 10 --\n" );
 	// Mods Menu
-    //Disabled by HunoPPC 2019
 	SetModsMenuGuiVars();
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 11 --\n" );
 
 	guiMsg->SetStateString( "visible_hasxp", fileSystem->HasD3XP() ? "1" : "0" );
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 12 --\n" );
 
 	guiMainMenu->SetStateString( "driver_prompt", "0" );
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 13 --\n" );
 
 	SetPbMenuGuiVars();
-  //  common->Printf( "Debug SetMainMenuGuiVars -- Phase 14 --\n" );
 }
 
 /*
