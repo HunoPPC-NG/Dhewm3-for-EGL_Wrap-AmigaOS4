@@ -36,7 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 /*
 PROBLEM: compressed textures may break the zero clamp rule!
 */
-
+#if !defined(EGL_WRAP_GL_ES)
 static bool FormatIsDXT( int internalFormat ) {
 	if ( internalFormat < GL_COMPRESSED_RGB_S3TC_DXT1_EXT
 	|| internalFormat > GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ) {
@@ -44,6 +44,7 @@ static bool FormatIsDXT( int internalFormat ) {
 	}
 	return true;
 }
+#endif
 
 int MakePowerOfTwo( int num ) {
 	int		pot;
@@ -61,6 +62,7 @@ Used for determining memory utilization
 */
 int idImage::BitsForInternalFormat( int internalFormat ) const {
 	switch ( internalFormat ) {
+#if !defined(EGL_WRAP_GL_ES)
 	case GL_INTENSITY8:
 	case 1:
 		return 8;
@@ -99,9 +101,16 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 		return 4;			// not sure
 	case GL_COMPRESSED_RGBA_ARB:
 		return 8;			// not sure
+#endif
 	default:
-		common->Error( "R_BitsForInternalFormat: BAD FORMAT:%i", internalFormat );
+#if !defined(EGL_WRAP_GL_ES)
+			common->Error("R_BitsForInternalFormat: BAD FORMAT:%i", internalFormat);
+#else
+			return 8;
+#endif
 	}
+
+
 	return 0;
 }
 
@@ -162,7 +171,7 @@ void idImage::UploadCompressedNormalMap( int width, int height, const byte *rgba
 			}
 		}
 	}
-
+#if !defined(EGL_WRAP_GL_ES)
 	if ( glConfig.sharedTexturePaletteAvailable ) {
 		qglTexImage2D( GL_TEXTURE_2D,
 					mipLevel,
@@ -174,6 +183,7 @@ void idImage::UploadCompressedNormalMap( int width, int height, const byte *rgba
 					GL_UNSIGNED_BYTE,
 					normals );
 	}
+#endif
 }
 
 
@@ -208,6 +218,7 @@ This may need to scan six cube map images
 */
 GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height,
 									 textureDepth_t minimumDepth ) const {
+#if !defined(EGL_WRAP_GL_ES)
 	int		i, c;
 	const byte	*scan;
 	int		rgbOr, rgbAnd, aOr, aAnd;
@@ -223,9 +234,10 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	aOr = 0;
 	aAnd = -1;
 
-	for ( int side = 0 ; side < numDataPtrs ; side++ ) {
+	for (int side = 0 ; side < numDataPtrs ; side++) {
 		scan = dataPtrs[side];
-		for ( i = 0; i < c; i++, scan += 4 ) {
+
+		for (i = 0; i < c; i++, scan += 4) {
 			int		cor, cand;
 
 			aOr |= scan[3];
@@ -235,7 +247,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 			cand = scan[0] & scan[1] & scan[2];
 
 			// if rgb are all the same, the or and and will match
-			rgbDiffer |= ( cor ^ cand );
+			rgbDiffer |= (cor ^ cand);
 
 			rgbOr |= cor;
 			rgbAnd &= cand;
@@ -243,7 +255,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 			cor |= scan[3];
 			cand &= scan[3];
 
-			rgbaDiffer |= ( cor ^ cand );
+			rgbaDiffer |= (cor ^ cand);
 		}
 	}
 
@@ -252,48 +264,59 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	// of 255 alpha, but if the alpha actually is referenced, there will be
 	// different behavior in the compressed vs uncompressed states.
 	bool needAlpha;
-	if ( aAnd == 255 || aOr == 0 ) {
+
+	if (aAnd == 255 || aOr == 0) {
 		needAlpha = false;
 	} else {
 		needAlpha = true;
 	}
 
 	// catch normal maps first
-	if ( minimumDepth == TD_BUMP ) {
-		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 1 && glConfig.sharedTexturePaletteAvailable ) {
+	if (minimumDepth == TD_BUMP) {
+#if !defined(EGL_WRAP_GL_ES)
+		if (globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 1 && glConfig.sharedTexturePaletteAvailable) {
 			// image_useNormalCompression should only be set to 1 on nv_10 and nv_20 paths
 			return GL_COLOR_INDEX8_EXT;
-		} else if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() && glConfig.textureCompressionAvailable ) {
+		} else if (globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() && glConfig.textureCompressionAvailable) {
 			// image_useNormalCompression == 2 uses rxgb format which produces really good quality for medium settings
 			return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-		} else {
+		} else
+#endif
+		{
 			// we always need the alpha channel for bump maps for swizzling
 			return GL_RGBA8;
 		}
 	}
 
 	// allow a complete override of image compression with a cvar
-	if ( !globalImages->image_useCompression.GetBool() ) {
+	if (!globalImages->image_useCompression.GetBool()) {
 		minimumDepth = TD_HIGH_QUALITY;
 	}
 
-	if ( minimumDepth == TD_SPECULAR ) {
+	if (minimumDepth == TD_SPECULAR) {
 		// we are assuming that any alpha channel is unintentional
-		if ( glConfig.textureCompressionAvailable ) {
+#if !defined(EGL_WRAP_GL_ES)
+		if (glConfig.textureCompressionAvailable) {
 			return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-		} else {
+		} else
+#endif
+		{
 			return GL_RGB5;
 		}
 	}
-	if ( minimumDepth == TD_DIFFUSE ) {
+
+	if (minimumDepth == TD_DIFFUSE) {
 		// we might intentionally have an alpha channel for alpha tested textures
-		if ( glConfig.textureCompressionAvailable ) {
-			if ( !needAlpha ) {
+#if !defined(EGL_WRAP_GL_ES)
+		if (glConfig.textureCompressionAvailable) {
+			if (!needAlpha) {
 				return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
 			} else {
 				return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 			}
-		} else if ( ( aAnd == 255 || aOr == 0 ) ) {
+		} else
+#endif
+		if ((aAnd == 255 || aOr == 0)) {
 			return GL_RGB5;
 		} else {
 			return GL_RGBA4;
@@ -303,7 +326,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	// there will probably be some drivers that don't
 	// correctly handle the intensity/alpha/luminance/luminance+alpha
 	// formats, so provide a fallback that only uses the rgb/rgba formats
-	if ( !globalImages->image_useAllFormats.GetBool() ) {
+	if (!globalImages->image_useAllFormats.GetBool()) {
 		// pretend rgb is varying and inconsistant, which
 		// prevents any of the more compact forms
 		rgbDiffer = 1;
@@ -312,44 +335,61 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	}
 
 	// cases without alpha
-	if ( !needAlpha ) {
-		if ( minimumDepth == TD_HIGH_QUALITY ) {
+	if (!needAlpha) {
+		if (minimumDepth == TD_HIGH_QUALITY) {
 			return GL_RGB8;			// four bytes
 		}
-		if ( glConfig.textureCompressionAvailable ) {
+
+#if !defined(EGL_WRAP_GL_ES)
+		if (glConfig.textureCompressionAvailable) {
 			return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;	// half byte
 		}
+#endif
+
 		return GL_RGB5;			// two bytes
 	}
 
 	// cases with alpha
-	if ( !rgbaDiffer ) {
-		if ( minimumDepth != TD_HIGH_QUALITY && glConfig.textureCompressionAvailable ) {
+	if (!rgbaDiffer) {
+#if !defined(EGL_WRAP_GL_ES)
+		if (minimumDepth != TD_HIGH_QUALITY && glConfig.textureCompressionAvailable) {
 			return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;	// one byte
 		}
+#endif
+
 		return GL_INTENSITY8;	// single byte for all channels
 	}
 
 #if 0
+
 	// we don't support alpha textures any more, because there
 	// is a discrepancy in the definition of TEX_ENV_COMBINE that
 	// causes them to be treated as 0 0 0 A, instead of 1 1 1 A as
 	// normal texture modulation treats them
-	if ( rgbAnd == 255 ) {
+	if (rgbAnd == 255) {
 		return GL_ALPHA8;		// single byte, only alpha
+	}
+
+#endif
+
+	if (minimumDepth == TD_HIGH_QUALITY) {
+		return GL_RGBA8;	// four bytes
+	}
+
+#if !defined(EGL_WRAP_GL_ES)
+	if (glConfig.textureCompressionAvailable) {
+		return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;	// one byte
 	}
 #endif
 
-	if ( minimumDepth == TD_HIGH_QUALITY ) {
-		return GL_RGBA8;	// four bytes
-	}
-	if ( glConfig.textureCompressionAvailable ) {
-		return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;	// one byte
-	}
-	if ( !rgbDiffer ) {
+	if (!rgbDiffer) {
 		return GL_LUMINANCE8_ALPHA8;	// two bytes, max quality
 	}
+
 	return GL_RGBA4;	// two bytes
+#else
+	return GL_RGBA8;	// four bytes
+#endif
 }
 
 /*
@@ -375,7 +415,7 @@ void idImage::SetImageFilterAndRepeat() const {
 	default:
 		common->FatalError( "R_CreateImage: bad texture filter" );
 	}
-
+#if !defined(EGL_WRAP_GL_ES)
 	if ( glConfig.anisotropicAvailable ) {
 		// only do aniso filtering on mip mapped images
 		if ( filter == TF_DEFAULT ) {
@@ -384,9 +424,12 @@ void idImage::SetImageFilterAndRepeat() const {
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1 );
 		}
 	}
+#endif
+#if !defined(EGL_WRAP_GL_ES)	
 	if ( glConfig.textureLODBiasAvailable ) {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS_EXT, globalImages->textureLODBias );
 	}
+#endif
 
 	// set the wrap/clamp modes
 	switch( repeat ) {
@@ -649,7 +692,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// upload the main image level
 	Bind();
 
-
+#if !defined(EGL_WRAP_GL_ES)
 	if ( internalFormat == GL_COLOR_INDEX8_EXT ) {
 		/*
 		if ( depth == TD_BUMP ) {
@@ -660,7 +703,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		}
 		*/
 		UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, 0 );
-	} else {
+	} else 
+#endif	
+	{
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 	}
 
@@ -712,6 +757,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 }
 
 
+#if !defined(EGL_WRAP_GL_ES)
 /*
 ==================
 Generate3DImage
@@ -844,6 +890,7 @@ void idImage::Generate3DImage( const byte *pic, int width, int height, int picDe
 	// see if we messed anything up
 	GL_CheckErrors();
 }
+#endif
 
 
 /*
@@ -876,9 +923,11 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 		return;
 	}
 
+#if !defined(EGL_WRAP_GL_ES)
 	if ( ! glConfig.cubeMapAvailable ) {
 		return;
 	}
+#endif
 
 	width = height = size;
 
@@ -1029,6 +1078,7 @@ versions of everything to speed future load times.
 ================
 */
 void idImage::WritePrecompressedImage() {
+#if !defined(EGL_WRAP_GL_ES)
 
 	// Always write the precompressed image if we're making a build
 	if ( !com_makingBuild.GetBool() ) {
@@ -1249,6 +1299,7 @@ void idImage::WritePrecompressedImage() {
 	}
 
 	fileSystem->CloseFile( f );
+#endif
 }
 
 /*
@@ -1319,6 +1370,7 @@ If fullLoad is false, only the small mip levels of the image will be loaded
 ================
 */
 bool idImage::CheckPrecompressedImage( bool fullLoad ) {
+	#if !defined(EGL_WRAP_GL_ES)
 	if ( !glConfig.isInitialized || !glConfig.textureCompressionAvailable ) {
 		return false;
 	}
@@ -1413,6 +1465,9 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	R_StaticFree( data );
 
 	return true;
+#else
+	return false;
+#endif
 }
 
 /*
@@ -1425,6 +1480,7 @@ has completed
 ===================
 */
 void idImage::UploadPrecompressedImage( byte *data, int len ) {
+#if !defined(EGL_WRAP_GL_ES)
 	ddsFileHeader_t	*header = (ddsFileHeader_t *)(data + 4);
 
 	// ( not byte swapping dwReserved1 dwReserved2 )
@@ -1549,6 +1605,7 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 	}
 
 	SetImageFilterAndRepeat();
+#endif
 }
 
 /*
@@ -1748,13 +1805,15 @@ void idImage::Bind() {
 			tmu->currentCubeMap = texnum;
 			qglBindTexture( GL_TEXTURE_CUBE_MAP_EXT, texnum );
 		}
-	} else if ( type == TT_3D ) {
+    }
+#if !defined(EGL_WRAP_GL_ES)
+	else if ( type == TT_3D ) {
 		if ( tmu->current3DMap != texnum ) {
 			tmu->current3DMap = texnum;
 			qglBindTexture( GL_TEXTURE_3D, texnum );
 		}
 	}
-
+#endif
 	if ( com_purgeAll.GetBool() ) {
 		GLclampf priority = 1.0f;
 		qglPrioritizeTextures( 1, &texnum, &priority );
@@ -1808,15 +1867,22 @@ void idImage::BindFragment() {
 	bindCount++;
 
 	// bind the texture
-	if ( type == TT_2D ) {
-		qglBindTexture( GL_TEXTURE_2D, texnum );
-	} else if ( type == TT_RECT ) {
-		qglBindTexture( GL_TEXTURE_RECTANGLE_NV, texnum );
-	} else if ( type == TT_CUBIC ) {
-		qglBindTexture( GL_TEXTURE_CUBE_MAP_EXT, texnum );
-	} else if ( type == TT_3D ) {
-		qglBindTexture( GL_TEXTURE_3D, texnum );
+	if (type == TT_2D) {
+		glBindTexture(GL_TEXTURE_2D, texnum);
 	}
+#if defined(GL_NV_texture_rectangle)
+	else if (type == TT_RECT) {
+		glBindTexture(GL_TEXTURE_RECTANGLE_NV, texnum);
+	}
+#endif
+	else if (type == TT_CUBIC) {
+		glBindTexture(GL_TEXTURE_CUBE_MAP, texnum);
+	}
+#if !defined(EGL_WRAP_GL_ES)
+	else if (type == TT_3D) {
+		glBindTexture(GL_TEXTURE_3D, texnum);
+	}
+#endif
 }
 
 
@@ -1842,7 +1908,9 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 	GetDownsize( imageWidth, imageHeight );
 	GetDownsize( potWidth, potHeight );
 
+#if !defined(EGL_WRAP_GL_ES)
 	qglReadBuffer( GL_BACK );
+#endif
 
 	// only resize if the current dimensions can't hold it at all,
 	// otherwise subview renderings could thrash this
@@ -1905,6 +1973,12 @@ void idImage::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight ) {
 	// if the size isn't a power of 2, the image must be increased in size
 	int	potWidth, potHeight;
 
+#if !defined(EGL_WRAP_GL_ES)
+	GLenum depthComponent = GL_DEPTH_COMPONENT24;
+#else
+	GLenum depthComponent = GL_DEPTH_COMPONENT;
+#endif
+
 	potWidth = MakePowerOfTwo( imageWidth );
 	potHeight = MakePowerOfTwo( imageHeight );
 
@@ -1912,11 +1986,11 @@ void idImage::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight ) {
 		uploadWidth = potWidth;
 		uploadHeight = potHeight;
 		if ( potWidth == imageWidth && potHeight == imageHeight ) {
-			qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, x, y, imageWidth, imageHeight, 0 );
+			qglCopyTexImage2D( GL_TEXTURE_2D, 0, depthComponent, x, y, imageWidth, imageHeight, 0 );
 		} else {
 			// we need to create a dummy image with power of two dimensions,
 			// then do a qglCopyTexSubImage2D of the data we want
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, potWidth, potHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL );
+			qglTexImage2D( GL_TEXTURE_2D, 0, depthComponent, potWidth, potHeight, 0, depthComponent, GL_UNSIGNED_BYTE, NULL );
 			qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
 		}
 	} else {
@@ -2099,6 +2173,7 @@ void idImage::Print() const {
 	}
 
 	switch ( internalFormat ) {
+#if !defined(EGL_WRAP_GL_ES)		
 	case GL_INTENSITY8:
 	case 1:
 		common->Printf( "I     " );
@@ -2155,6 +2230,7 @@ void idImage::Print() const {
 	case GL_COMPRESSED_RGBA_ARB:
 		common->Printf( "RGBAC " );
 		break;
+#endif		
 	case 0:
 		common->Printf( "      " );
 		break;

@@ -33,6 +33,13 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../renderer/tr_local.h"
 
+#if defined(EGL_WRAP_GL_ES)
+//OpenGLES2 is Here HunoPPC 2022
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+//
+#endif
+
 /*
 
   back end scene + lights rendering functions
@@ -175,7 +182,7 @@ void RB_T_RenderTriangleSurface( const drawSurf_t *surf ) {
 RB_EnterWeaponDepthHack
 ===============
 */
-void RB_EnterWeaponDepthHack() {
+void RB_EnterWeaponDepthHack(const drawSurf_t *surf) {
 	qglDepthRange( 0, 0.5 );
 
 	float	matrix[16];
@@ -183,10 +190,15 @@ void RB_EnterWeaponDepthHack() {
 	memcpy( matrix, backEnd.viewDef->projectionMatrix, sizeof( matrix ) );
 
 	matrix[14] *= 0.25;
-
+#if defined(EGL_WRAP_GL_ES)
+    float	mat[16];
+	myGlMultMatrix(surf->space->modelViewMatrix, matrix, mat);
+	GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix),1,GL_FALSE, mat);
+#else
 	qglMatrixMode(GL_PROJECTION);
 	qglLoadMatrixf( matrix );
 	qglMatrixMode(GL_MODELVIEW);
+#endif
 }
 
 /*
@@ -194,18 +206,26 @@ void RB_EnterWeaponDepthHack() {
 RB_EnterModelDepthHack
 ===============
 */
-void RB_EnterModelDepthHack( float depth ) {
+void RB_EnterModelDepthHack(const drawSurf_t *surf) {
 	qglDepthRange( 0.0f, 1.0f );
 
 	float	matrix[16];
 
 	memcpy( matrix, backEnd.viewDef->projectionMatrix, sizeof( matrix ) );
 
-	matrix[14] -= depth;
 
+#if defined(EGL_WRAP_GL_ES)
+	matrix[14] -= surf->space->modelDepthHack;
+    float	mat[16];
+	myGlMultMatrix(surf->space->modelViewMatrix, matrix, mat);
+	GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix),1,GL_FALSE, mat);
+#else
+	//matrix[14] -= depth;
+    matrix[14] -= surf->space->modelDepthHack;
 	qglMatrixMode(GL_PROJECTION);
 	qglLoadMatrixf( matrix );
 	qglMatrixMode(GL_MODELVIEW);
+#endif
 }
 
 /*
@@ -213,12 +233,17 @@ void RB_EnterModelDepthHack( float depth ) {
 RB_LeaveDepthHack
 ===============
 */
-void RB_LeaveDepthHack() {
+void RB_LeaveDepthHack(const drawSurf_t *surf) {
 	qglDepthRange( 0, 1 );
-
+#if defined(EGL_WRAP_GL_ES)
+	float	mat[16];
+	myGlMultMatrix(surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat);
+	GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix),1,GL_FALSE, mat);
+#else
 	qglMatrixMode(GL_PROJECTION);
 	qglLoadMatrixf( backEnd.viewDef->projectionMatrix );
 	qglMatrixMode(GL_MODELVIEW);
+#endif
 }
 
 /*
@@ -243,15 +268,25 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 
 		// change the matrix if needed
 		if ( drawSurf->space != backEnd.currentSpace ) {
+			#if defined(EGL_WRAP_GL_ES)
+			float	mat[16];
+			myGlMultMatrix(drawSurf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat);
+			GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix),1,GL_FALSE, mat);
+
+			// we need the model matrix without it being combined with the view matrix
+			// so we can transform local vectors to global coordinates
+			GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelMatrix),1,GL_FALSE, drawSurf->space->modelMatrix);
+			#else
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			#endif
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack();
+			RB_EnterWeaponDepthHack(drawSurf);
 		}
 
 		if ( drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
+			RB_EnterModelDepthHack(drawSurf);
 		}
 
 		// change the scissor if needed
@@ -267,7 +302,7 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		triFunc_( drawSurf );
 
 		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_LeaveDepthHack();
+			RB_LeaveDepthHack(drawSurf);
 		}
 
 		backEnd.currentSpace = drawSurf->space;
@@ -288,15 +323,25 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 	for ( drawSurf = drawSurfs ; drawSurf ; drawSurf = drawSurf->nextOnLight ) {
 		// change the matrix if needed
 		if ( drawSurf->space != backEnd.currentSpace ) {
+			#if defined(EGL_WRAP_GL_ES)
+			float	mat[16];
+			myGlMultMatrix(drawSurf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat);
+			GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix),1,GL_FALSE, mat);
+
+			// we need the model matrix without it being combined with the view matrix
+			// so we can transform local vectors to global coordinates
+			GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelMatrix),1,GL_FALSE, drawSurf->space->modelMatrix);
+			#else
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			#endif
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack();
+			RB_EnterWeaponDepthHack(drawSurf);
 		}
 
 		if ( drawSurf->space->modelDepthHack ) {
-			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
+			RB_EnterModelDepthHack(drawSurf);
 		}
 
 		// change the scissor if needed
@@ -312,7 +357,7 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 		triFunc_( drawSurf );
 
 		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_LeaveDepthHack();
+			RB_LeaveDepthHack(drawSurf);
 		}
 
 		backEnd.currentSpace = drawSurf->space;
@@ -363,11 +408,19 @@ RB_LoadShaderTextureMatrix
 */
 void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture ) {
 	float	matrix[16];
-
+#if defined(EGL_WRAP_GL_ES)
+	if (texture->hasMatrix) {
+		RB_GetShaderTextureMatrix(shaderRegisters, texture, matrix);
+		GL_UniformMatrix4fv(offsetof(shaderProgram_t, textureMatrix),1,GL_FALSE, matrix);
+	} else {
+		GL_UniformMatrix4fv(offsetof(shaderProgram_t, textureMatrix),1,GL_FALSE, mat4_identity.ToFloatPtr());
+	}
+#else
 	RB_GetShaderTextureMatrix( shaderRegisters, texture, matrix );
 	qglMatrixMode( GL_TEXTURE );
 	qglLoadMatrixf( matrix );
 	qglMatrixMode( GL_MODELVIEW );
+#endif
 }
 
 /*
@@ -420,6 +473,7 @@ void RB_BindStageTexture( const float *shaderRegisters, const textureStage_t *te
 	if ( texture->texgen == TG_SKYBOX_CUBE || texture->texgen == TG_WOBBLESKY_CUBE ) {
 		qglTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
 	}
+#if !defined(EGL_WRAP_GL_ES)	
 	if ( texture->texgen == TG_REFLECT_CUBE ) {
 		qglEnable( GL_TEXTURE_GEN_S );
 		qglEnable( GL_TEXTURE_GEN_T );
@@ -443,6 +497,7 @@ void RB_BindStageTexture( const float *shaderRegisters, const textureStage_t *te
 	if ( texture->hasMatrix ) {
 		RB_LoadShaderTextureMatrix( shaderRegisters, texture );
 	}
+#endif
 }
 
 /*
@@ -710,7 +765,17 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	// change the matrix and light projection vectors if needed
 	if ( surf->space != backEnd.currentSpace ) {
 		backEnd.currentSpace = surf->space;
+		#if defined(EGL_WRAP_GL_ES)
+		float	mat[16];
+		myGlMultMatrix(surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat);
+		GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix),1,GL_FALSE, mat);
+
+		// we need the model matrix without it being combined with the view matrix
+		// so we can transform local vectors to global coordinates
+		GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelMatrix),1,GL_FALSE, surf->space->modelMatrix);
+		#else
 		qglLoadMatrixf( surf->space->modelViewMatrix );
+		#endif
 	}
 
 	// change the scissor if needed
@@ -724,11 +789,11 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 
 	// hack depth range if needed
 	if ( surf->space->weaponDepthHack ) {
-		RB_EnterWeaponDepthHack();
+		RB_EnterWeaponDepthHack(surf);
 	}
 
 	if ( surf->space->modelDepthHack ) {
-		RB_EnterModelDepthHack( surf->space->modelDepthHack );
+		RB_EnterModelDepthHack(surf);
 	}
 
 	inter.surf = surf;
@@ -760,8 +825,12 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 		// now multiply the texgen by the light texture matrix
 		if ( lightStage->texture.hasMatrix ) {
 			RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, backEnd.lightTextureMatrix );
+            #if defined(EGL_WRAP_GL_ES)
+            RB_BakeTextureMatrixIntoTexgen(reinterpret_cast<class idPlane *>(inter.lightProjection));
+            #else
 			RB_BakeTextureMatrixIntoTexgen( reinterpret_cast<class idPlane *>(inter.lightProjection), backEnd.lightTextureMatrix );
-		}
+		    #endif
+        }
 
 		inter.bumpImage = NULL;
 		inter.specularImage = NULL;
@@ -842,7 +911,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 
 	// unhack depth range if needed
 	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {
-		RB_LeaveDepthHack();
+		RB_LeaveDepthHack(surf);
 	}
 }
 

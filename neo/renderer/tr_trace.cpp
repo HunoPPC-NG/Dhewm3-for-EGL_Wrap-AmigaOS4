@@ -284,6 +284,7 @@ RB_DrawExpandedTriangles
 =================
 */
 void RB_DrawExpandedTriangles( const srfTriangles_t *tri, const float radius, const idVec3 &vieworg ) {
+#if !defined(EGL_WRAP_GL_ES)
 	int i, j, k;
 	idVec3 dir[6], normal, point;
 
@@ -341,6 +342,7 @@ void RB_DrawExpandedTriangles( const srfTriangles_t *tri, const float radius, co
 
 		qglEnd();
 	}
+#endif
 }
 
 /*
@@ -351,6 +353,8 @@ Debug visualization
 ================
 */
 void RB_ShowTrace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
+#if 0 //HunoPPC 2022
+#if !defined(EGL_WRAP_GL_ES)
 	int						i;
 	const srfTriangles_t	*tri;
 	const drawSurf_t		*surf;
@@ -424,4 +428,6 @@ void RB_ShowTrace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 			RB_DrawBounds( idBounds( hit.point ).Expand( 1 ) );
 		}
 	}
+#endif
+#endif
 }

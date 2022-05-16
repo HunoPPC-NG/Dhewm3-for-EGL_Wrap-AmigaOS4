@@ -10,7 +10,7 @@ Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
+ 
 Doom 3 Source Code is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -54,14 +54,17 @@ If you have questions concerning this license or the applicable additional terms
 // functions that are not called every frame
 
 glconfig_t	glConfig;
-//HunoPPC 2020
-//const char *r_rendererArgs[] = { "best", "arb", "arb2", "glsl", "Cg", "exp", "nv10", "nv20", "r200", NULL };
+//HunoPPC 2022
+#if defined(EGL_WRAP_GL_ES)
+const char *r_rendererArgs[] = { "best", "arb", "arb2","glsl",  NULL };
+#else
 const char *r_rendererArgs[] = { "best", "arb", "arb2", NULL }; 
+#endif
 //
 //Used on Original DOOM3 source code
 idCVar r_useTripleTextureARB( "r_useTripleTextureARB", "0", CVAR_RENDERER | CVAR_BOOL, "cards with 3+ texture units do a two pass instead of three pass" );
 //
-idCVar r_inhibitFragmentProgram( "r_inhibitFragmentProgram", "0", CVAR_RENDERER | CVAR_BOOL, "ignore the fragment program extension" );
+idCVar r_inhibitFragmentProgram( "r_inhibitFragmentProgram", "1", CVAR_RENDERER | CVAR_BOOL, "ignore the fragment program extension" );//Init r_inhibitFragmentProgram for arb2 and glsl
 idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "1", CVAR_RENDERER | CVAR_BOOL, "use a more precise area reference determination" );
 idCVar r_multiSamples( "r_multiSamples", "2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "number of antialiasing samples" );
 //HunoPPC 2021 r_mode 5 by 3
@@ -242,7 +245,7 @@ idCVar r_useCarmacksReverse( "r_useCarmacksReverse", "1", CVAR_RENDERER | CVAR_A
 idCVar r_useStencilOpSeparate( "r_useStencilOpSeparate", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Use glStencilOpSeparate() (if available) when rendering shadows" );
 
 // define qgl functions
-#define QGLPROC(name, rettype, args) rettype (APIENTRYP q##name) args;
+//#define QGLPROC(name, rettype, args) rettype (APIENTRYP q##name) args;
 //hunoppc 2018
 #include "../renderer/qgl_proc.h"
 
@@ -314,6 +317,11 @@ R_CheckPortableExtensions
 */
 static void R_CheckPortableExtensions( void ) {
 	glConfig.glVersion = atof( glConfig.version_string );
+#if !defined(EGL_WRAP_GL_ES)
+	if (!glConfig.glVersion >= 3.0) {
+		common->Error(common->GetLanguageDict()->GetString("#str_06780"));
+	}
+#endif
 
 	// GL_ARB_multitexture
 	glConfig.multitextureAvailable = R_CheckExtension( "GL_ARB_multitexture" );
@@ -322,15 +330,24 @@ static void R_CheckPortableExtensions( void ) {
 		qglMultiTexCoord2fvARB = (void(APIENTRY *)(GLenum, GLfloat *))GLimp_ExtensionPointer( "glMultiTexCoord2fvARB" );
 		qglActiveTextureARB = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glActiveTextureARB" );
 		qglClientActiveTextureARB = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glClientActiveTextureARB" );
-		qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, (GLint *)&glConfig.maxTextureUnits );
+#if !defined(EGL_WRAP_GL_ES)
+		glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, (GLint *)&glConfig.maxTextureUnits);
+#else
+		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, (GLint *)&glConfig.maxTextureUnits);
+#endif
 		if ( glConfig.maxTextureUnits > MAX_MULTITEXTURE_UNITS ) {
 			glConfig.maxTextureUnits = MAX_MULTITEXTURE_UNITS;
 		}
 		if ( glConfig.maxTextureUnits < 2 ) {
 			glConfig.multitextureAvailable = false;	// shouldn't ever happen
 		}
-		qglGetIntegerv( GL_MAX_TEXTURE_COORDS_ARB, (GLint *)&glConfig.maxTextureCoords );
-		qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS_ARB, (GLint *)&glConfig.maxTextureImageUnits );
+#if !defined(EGL_WRAP_GL_ES)
+		glGetIntegerv(GL_MAX_TEXTURE_COORDS_ARB, (GLint *)&glConfig.maxTextureCoords);
+		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS_ARB, (GLint *)&glConfig.maxTextureImageUnits);
+#else
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, (GLint *)&glConfig.maxTextureCoords);
+		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, (GLint *)&glConfig.maxTextureImageUnits);
+#endif
 	}
 
 	// GL_ARB_texture_env_combine
@@ -360,6 +377,7 @@ static void R_CheckPortableExtensions( void ) {
 
 	// GL_ARB_texture_compression + GL_S3_s3tc
 	// DRI drivers may have GL_ARB_texture_compression but no GL_EXT_texture_compression_s3tc
+
 	if ( R_CheckExtension( "GL_ARB_texture_compression" ) && R_CheckExtension( "GL_EXT_texture_compression_s3tc" ) ) {
 		glConfig.textureCompressionAvailable = true;
 		qglCompressedTexImage2DARB = (PFNGLCOMPRESSEDTEXIMAGE2DARBPROC)GLimp_ExtensionPointer( "glCompressedTexImage2DARB" );
@@ -456,6 +474,11 @@ static void R_CheckPortableExtensions( void ) {
 
 	// ARB_vertex_buffer_object
 	glConfig.ARBVertexBufferObjectAvailable = R_CheckExtension( "GL_ARB_vertex_buffer_object" );
+    #if !defined(EGL_WRAP_GL_ES)
+    glConfig.ARBVertexBufferObjectAvailable = true;
+    #else
+    glConfig.ARBVertexBufferObjectAvailable = true;
+    #endif
 	if(glConfig.ARBVertexBufferObjectAvailable) {
 		qglBindBufferARB = (PFNGLBINDBUFFERARBPROC)GLimp_ExtensionPointer( "glBindBufferARB");
 		qglDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC)GLimp_ExtensionPointer( "glDeleteBuffersARB");
@@ -475,8 +498,13 @@ static void R_CheckPortableExtensions( void ) {
     #ifdef FORCEVIRTUALGLFUNCTIONS
 	glConfig.ARBVertexProgramAvailable = true;
     #endif
+    #if !defined(EGL_WRAP_GL_ES)
     //Force OFF ARBVertex HunoPPC 2022
-    glConfig.ARBVertexProgramAvailable = false;
+    glConfig.ARBVertexProgramAvailable = true;
+    #else
+    //Force ON ARBVertex HunoPPC 2022
+    glConfig.ARBVertexProgramAvailable = true;
+    #endif
     if (glConfig.ARBVertexProgramAvailable) {
 		qglVertexAttribPointerARB = (PFNGLVERTEXATTRIBPOINTERARBPROC)GLimp_ExtensionPointer( "glVertexAttribPointerARB" );
 		qglEnableVertexAttribArrayARB = (PFNGLENABLEVERTEXATTRIBARRAYARBPROC)GLimp_ExtensionPointer( "glEnableVertexAttribArrayARB" );
@@ -488,21 +516,29 @@ static void R_CheckPortableExtensions( void ) {
 		qglProgramLocalParameter4fvARB = (PFNGLPROGRAMLOCALPARAMETER4FVARBPROC)GLimp_ExtensionPointer( "glProgramLocalParameter4fvARB" );
 	}
 
+
 	// ARB_fragment_program
-	if ( r_inhibitFragmentProgram.GetBool() ) {
-		glConfig.ARBFragmentProgramAvailable = false;
-	} else {
 		glConfig.ARBFragmentProgramAvailable = R_CheckExtension( "GL_ARB_fragment_program" );
+        #if !defined(EGL_WRAP_GL_ES)
         //Force OFF ARBFRAGMENT HunoPPC 2022
-        glConfig.ARBFragmentProgramAvailable = false;
+        glConfig.ARBFragmentProgramAvailable = true;
+        #else
+        //Force ON ARBFRAGMENT HunoPPC 2022
+        glConfig.ARBFragmentProgramAvailable = true;
+        #endif
 		if (glConfig.ARBFragmentProgramAvailable) {
 			// these are the same as ARB_vertex_program
+            printf("ARBFragmentProgram is Available now! for EGL_Wrap and arb2\n");
 			qglProgramStringARB = (PFNGLPROGRAMSTRINGARBPROC)GLimp_ExtensionPointer( "glProgramStringARB" );
 			qglBindProgramARB = (PFNGLBINDPROGRAMARBPROC)GLimp_ExtensionPointer( "glBindProgramARB" );
 			qglProgramEnvParameter4fvARB = (PFNGLPROGRAMENVPARAMETER4FVARBPROC)GLimp_ExtensionPointer( "glProgramEnvParameter4fvARB" );
 			qglProgramLocalParameter4fvARB = (PFNGLPROGRAMLOCALPARAMETER4FVARBPROC)GLimp_ExtensionPointer( "glProgramLocalParameter4fvARB" );
 		}
-	}
+
+    #if defined(EGL_WRAP_GL_ES)
+    // GL_ARB_shading_language_100
+	glConfig.GLSLAvailable = R_CheckExtension("GL_ARB_shading_language_100");
+    #endif
 
 	 #if !defined(__amigaos4__) //HunoPPC 2019
 	// check for minimum set
@@ -512,12 +548,13 @@ static void R_CheckPortableExtensions( void ) {
 	}
     #endif
 
+    #if !defined(EGL_WRAP_GL_ES)
 	// GL_EXT_depth_bounds_test
 	glConfig.depthBoundsTestAvailable = R_CheckExtension( "EXT_depth_bounds_test" );
 	if ( glConfig.depthBoundsTestAvailable ) {
 		qglDepthBoundsEXT = (PFNGLDEPTHBOUNDSEXTPROC)GLimp_ExtensionPointer( "glDepthBoundsEXT" );
 	}
-
+    #endif
 }
 
 
@@ -736,20 +773,6 @@ void R_InitOpenGL( void ) {
 		r_multiSamples.SetInteger( 0 );
 	}
 
-// load qgl function pointers
-#if defined(__amigaos4__) //HunoPPC 2019
-#define QGLPROC(name, rettype, args) \
-	q##name = (rettype(APIENTRYP)args)GLimp_ExtensionPointer(#name); \
-	if (!q##name) \
-		common->Printf("AmigaOS4 OpenGL 1.X not found(%s)\n", #name);
-#else
-#define QGLPROC(name, rettype, args) \
-	q##name = (rettype(APIENTRYP)args)GLimp_ExtensionPointer(#name); \
-	if (!q##name) \
-		common->FatalError("Unable to initialize OpenGL (%s)", #name);
-#endif
-//hunoppc 2019
-#include "../renderer/qgl_proc.h"
 
 	// input and sound systems need to be tied to the new window
 	Sys_InitInput();
@@ -781,10 +804,18 @@ void R_InitOpenGL( void ) {
 
 	// parse our vertex and fragment programs, possibly disably support for
 	// one of the paths if there was an error
+#if !defined(EGL_WRAP_GL_ES)
 	R_ARB2_Init();
-
-	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
+cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
 	R_ReloadARBPrograms_f( idCmdArgs() );
+#endif
+
+#if defined(EGL_WRAP_GL_ES)
+    R_GLSL_Init();
+cmdSystem->AddCommand("reloadGLSLprograms", R_ReloadGLSLPrograms_f, CMD_FL_RENDERER, "reloads GLSL programs");
+	R_ReloadGLSLPrograms_f(idCmdArgs());
+#endif
+
 
 	// allocate the vertex array range or vertex objects
 	vertexCache.Init();
@@ -1282,8 +1313,9 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 			if ( yo + h > height ) {
 				h = height - yo;
 			}
-
+#if !defined(EGL_WRAP_GL_ES)
 			qglReadBuffer( GL_FRONT );
+#endif
 			qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp );
 
 			int	row = ( w * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
@@ -1517,7 +1549,13 @@ void R_StencilShot( void ) {
 
 	byte *byteBuffer = (byte *)Mem_Alloc(pix);
 
-	qglReadPixels( 0, 0, width, height, GL_STENCIL_INDEX , GL_UNSIGNED_BYTE, byteBuffer );
+#if !defined(EGL_WRAP_GL_ES)
+	GLenum stencilIndex = GL_STENCIL_INDEX;
+#else
+	GLenum stencilIndex = GL_STENCIL_INDEX8;
+#endif	
+
+	qglReadPixels( 0, 0, width, height, stencilIndex , GL_UNSIGNED_BYTE, byteBuffer );
 
 	for ( i = 0 ; i < pix ; i++ ) {
 		buffer[18+i*3] =
@@ -1895,6 +1933,7 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 		common->Printf( "N/A\n" );
 	}
 
+        common->Printf("CPU: %s\n", Sys_GetProcessorString());
 	const char *active[2] = { "", " (ACTIVE)" };
 
 	if ( glConfig.allowARB2Path ) {
@@ -2184,6 +2223,7 @@ idRenderSystemLocal::Init
 ===============
 */
 void idRenderSystemLocal::Init( void ) {
+	common->Printf("------- Initializing renderSystem --------\n");
 	// clear all our internal state
 	viewCount = 1;		// so cleared structures never match viewCount
 	// we used to memset tr, but now that it is a class, we can't, so
@@ -2211,6 +2251,10 @@ void idRenderSystemLocal::Init( void ) {
 	globalImages->Init();
 
 	idCinematic::InitCinematic( );
+#if defined(EGL_WRAP_GL_ES)
+// build brightness translation tables
+	R_SetColorMappings();
+#endif
 
 	R_InitMaterials();
 
@@ -2222,7 +2266,11 @@ void idRenderSystemLocal::Init( void ) {
 	identitySpace.modelMatrix[2*4+2] = 1.0f;
 
 	origWidth = origHeight = 0; // DG: for resetting width/height in EndFrame()
+	common->Printf("renderSystem initialized.\n");
+	common->Printf("--------------------------------------\n");
+	
 }
+
 
 /*
 ===============

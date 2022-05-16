@@ -154,7 +154,10 @@ R_ScreenRectFromViewFrustumBounds
 */
 idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds ) {
 	idScreenRect screenRect;
-
+	
+	//HunoPPC 2022
+	screenRect.Clear();
+	//
 	screenRect.x1 = idMath::FtoiFast( 0.5f * ( 1.0f - bounds[1].y ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 ) );
 	screenRect.x2 = idMath::FtoiFast( 0.5f * ( 1.0f - bounds[0].y ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 ) );
 	screenRect.y1 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[0].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
@@ -186,6 +189,12 @@ R_ToggleSmpFrame
 ====================
 */
 void R_ToggleSmpFrame( void ) {
+	
+	//HunoPPC 2022
+	if (r_lockSurfaces.GetBool()) {
+		return;
+	}
+	//
 	R_FreeDeferredTriSurfs( frameData );
 
 	// clear frame-temporary data
@@ -782,7 +791,7 @@ myGlMultMatrix
 ==========================
 */
 void myGlMultMatrix( const float a[16], const float b[16], float out[16] ) {
-#if 0
+#if defined(EGL_WRAP_GL_ES)
 	int		i, j;
 
 	for ( i = 0 ; i < 4 ; i++ ) {

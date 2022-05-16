@@ -30,6 +30,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "../renderer/VertexCache.h"
 
 #include "../renderer/tr_local.h"
+
+//#define ACTIVATE_NEW_BUMP
+
 /*
 
   with standard calls, we can't do bump mapping or vertex colors with
@@ -162,7 +165,8 @@ static void RB_ARB_DrawInteraction(const drawInteraction_t *din)
 		// texture 0 will be the per-surface bump map
 		GL_SelectTexture(0);
 		qglEnableClientState(GL_TEXTURE_COORD_ARRAY);
-//	FIXME: matrix work!	RB_BindStageTexture( surfaceRegs, &surfaceStage->texture, surf );
+//	FIXME: matrix work!	
+        //RB_BindStageTexture( surfaceRegs, &surfaceStage->texture, surf );
 		din->bumpImage->Bind();
 
 		// texture 1 is the normalization cube map
@@ -207,6 +211,7 @@ static void RB_ARB_DrawInteraction(const drawInteraction_t *din)
 	//
 	//-----------------------------------------------------
 	// don't trash alpha
+
 	GL_State(GLS_SRCBLEND_DST_ALPHA | GLS_DSTBLEND_ONE | GLS_ALPHAMASK | GLS_DEPTHMASK
 	         | backEnd.depthFunc);
 
@@ -234,7 +239,7 @@ static void RB_ARB_DrawInteraction(const drawInteraction_t *din)
 
 	qglEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	// FIXME: does this not get the texture matrix?
-//	RB_BindStageTexture( surfaceRegs, &surfaceStage->texture, surf );
+  //RB_BindStageTexture( surfaceRegs, &surfaceStage->texture, surf );
 	din->diffuseImage->Bind();
 
 	// texture 1 will get the light projected texture
@@ -319,6 +324,17 @@ static void RB_ARB_DrawThreeTextureInteraction(const drawInteraction_t *din)
 	// I just want alpha = Dot( texture0, texture1 )
 	GL_TexEnv(GL_COMBINE_ARB);
 
+    #ifdef ACTIVATE_NEW_BUMP
+    common->Printf( "Enter on new code on BumpMapping first init\n");
+    //Set up texture environment to do (tex0 dot tex1)*color
+
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_DOT3_RGB_ARB);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
+
+
+    #else
 	qglTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_DOT3_RGBA_ARB);
 	qglTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
 	qglTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
@@ -326,6 +342,7 @@ static void RB_ARB_DrawThreeTextureInteraction(const drawInteraction_t *din)
 	qglTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB_ARB, GL_SRC_COLOR);
 	qglTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1);
 	qglTexEnvi(GL_TEXTURE_ENV, GL_ALPHA_SCALE, 1);
+    #endif
 
 	// draw it
 	RB_DrawElementsWithCounters(tri);
@@ -361,12 +378,32 @@ static void RB_ARB_DrawThreeTextureInteraction(const drawInteraction_t *din)
 
 		if (din->vertexColor == SVC_INVERSE_MODULATE) {
 			GL_TexEnv(GL_COMBINE_ARB);
+            #ifdef ACTIVATE_NEW_BUMP
+            common->Printf( "Enter on new code on BumpMapping second init\n");
+            //Set up texture environment to do (tex0 dot tex1)*color
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_REPLACE);
+
+		glActiveTextureARB(GL_TEXTURE1_ARB);
+
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_DOT3_RGB_ARB);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
+
+		glActiveTextureARB(GL_TEXTURE0_ARB);
+
+
+
+            #else
 			qglTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PRIMARY_COLOR_ARB);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB_ARB, GL_SRC_COLOR);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB_ARB, GL_ONE_MINUS_SRC_COLOR);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1);
+            #endif
 		}
 	}
 

@@ -525,35 +525,24 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 	} else if ( idStr::Icmp( r_renderer.GetString(), "arb2" ) == 0 ) {
 		if ( glConfig.allowARB2Path ) {
 			backEndRenderer = BE_ARB2;
-	/*} else if ( idStr::Icmp( r_renderer.GetString(), "nv10" ) == 0 ) {
-		if ( glConfig.allowNV10Path ) {
-			backEndRenderer = BE_NV10;
+    #if defined(EGL_WRAP_GL_ES)
+	} else if ( idStr::Icmp( r_renderer.GetString(), "glsl" ) == 0 ) {
+		if ( glConfig.allowGLSLPath ) {
+			backEndRenderer = BE_GLSL;
 		}
-	} else if ( idStr::Icmp( r_renderer.GetString(), "nv20" ) == 0 ) {
-		if ( glConfig.allowNV20Path ) {
-			backEndRenderer = BE_NV20;
-		}
-	} else if ( idStr::Icmp( r_renderer.GetString(), "r200" ) == 0 ) {
-		if ( glConfig.allowR200Path ) {
-			backEndRenderer = BE_R200;
-		*/
-		}
+    #endif
 	}
+}
 
 	// fallback
 	if ( backEndRenderer == BE_BAD ) {
 		// choose the best
 		if ( glConfig.allowARB2Path ) {
 			backEndRenderer = BE_ARB2;
-	  /*} else if ( glConfig.allowGLSLPath ) {
-			backEndRenderer = BE_GLSL;
-		} else if ( glConfig.allowR200Path ) {
-			backEndRenderer = BE_R200;
-		} else if ( glConfig.allowNV20Path ) {
-			backEndRenderer = BE_NV20;
-		} else if ( glConfig.allowNV10Path ) {
-			backEndRenderer = BE_NV10;
-			*/
+    #if defined(EGL_WRAP_GL_ES)
+		} else if ( glConfig.allowGLSLPath ) {
+			backEndRenderer = BE_GLSL;	
+    #endif
 		} else {
 			// the others are considered experimental
 			backEndRenderer = BE_ARB;
@@ -567,26 +556,17 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 	case BE_ARB:
 		common->Printf( "using ARB AmigaOS4 renderSystem\n" );
 		break;
-	/*case BE_GLSL:
-		common->Printf( "using GLSL AmigaOS4 renderSystem\n" );
-		break;
-	case BE_NV10:
-		common->Printf( "using NV10 renderSystem\n" );
-		break;
-	case BE_NV20:
-		common->Printf( "using NV20 renderSystem\n" );
-		backEndRendererHasVertexPrograms = true;
-		break;
-	case BE_R200:
-		common->Printf( "using R200 renderSystem\n" );
-		backEndRendererHasVertexPrograms = true;
-		break;
-		*/
 	case BE_ARB2:
 		common->Printf( "using ARB2 AmigaOS4 renderSystem\n" );
 		backEndRendererHasVertexPrograms = true;
 		backEndRendererMaxLight = 999;
 		break;
+    #if defined(EGL_WRAP_GL_ES)
+		case BE_GLSL:
+		common->Printf( "using GLSL AmigaOS4 renderSystem\n" );
+		backEndRendererMaxLight = 999;
+		break;
+    #endif
 	default:
 		common->FatalError( "SetbackEndRenderer: bad back end" );
 	}
@@ -969,8 +949,10 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 	R_IssueRenderCommands();
-
+	
+#if !defined(EGL_WRAP_GL_ES)
 	qglReadBuffer( GL_BACK );
+#endif
 
 	// include extra space for OpenGL padding to word boundaries
 	int	c = ( rc->width + 3 ) * rc->height;

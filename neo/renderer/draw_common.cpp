@@ -32,9 +32,12 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../renderer/tr_local.h"
 
-//HunoPPC 2022
-#define ACTIVE_NEW_DRAW_COMMON
-
+#if defined(EGL_WRAP_GL_ES)
+//OpenGLES2 is Here HunoPPC 2022
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+//
+#endif
 extern idCVar r_useCarmacksReverse;
 extern idCVar r_useStencilOpSeparate;
 /*
@@ -42,6 +45,45 @@ extern idCVar r_useStencilOpSeparate;
 RB_BakeTextureMatrixIntoTexgen
 =====================
 */
+#if defined(EGL_WRAP_GL_ES)
+void RB_BakeTextureMatrixIntoTexgen(idPlane lightProject[3])
+{
+	float	genMatrix[16];
+	float	final[16];
+
+	genMatrix[0] = lightProject[0][0];
+	genMatrix[1] = lightProject[0][1];
+	genMatrix[2] = lightProject[0][2];
+	genMatrix[3] = lightProject[0][3];
+
+	genMatrix[4] = lightProject[1][0];
+	genMatrix[5] = lightProject[1][1];
+	genMatrix[6] = lightProject[1][2];
+	genMatrix[7] = lightProject[1][3];
+
+	genMatrix[8] = 0;
+	genMatrix[9] = 0;
+	genMatrix[10] = 0;
+	genMatrix[11] = 0;
+
+	genMatrix[12] = lightProject[2][0];
+	genMatrix[13] = lightProject[2][1];
+	genMatrix[14] = lightProject[2][2];
+	genMatrix[15] = lightProject[2][3];
+
+	myGlMultMatrix(genMatrix, backEnd.lightTextureMatrix, final);
+
+	lightProject[0][0] = final[0];
+	lightProject[0][1] = final[1];
+	lightProject[0][2] = final[2];
+	lightProject[0][3] = final[3];
+
+	lightProject[1][0] = final[4];
+	lightProject[1][1] = final[5];
+	lightProject[1][2] = final[6];
+	lightProject[1][3] = final[7];
+}
+#else
 void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textureMatrix ) {
 	float	genMatrix[16];
 	float	final[16];
@@ -78,7 +120,7 @@ void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textu
 	lightProject[1][2] = final[9];
 	lightProject[1][3] = final[13];
 }
-
+#endif
 /*
 ================
 RB_PrepareStageTexturing
@@ -96,13 +138,30 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 		RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
 	}
 
+#if defined(EGL_WRAP_GL_ES)
+	// texgens
+	if (pStage->texture.texgen == TG_DIFFUSE_CUBE) {
+		GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 3, GL_FLOAT, false, sizeof(idDrawVert),
+		                       ac->normal.ToFloatPtr());
+	}
+	
+	if (pStage->texture.texgen == TG_SKYBOX_CUBE || pStage->texture.texgen == TG_WOBBLESKY_CUBE) {
+		GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 3, GL_FLOAT, false, 0,
+		                       vertexCache.Position(surf->dynamicTexCoords));
+	}
+#else
 	// texgens
 	if ( pStage->texture.texgen == TG_DIFFUSE_CUBE ) {
 		qglTexCoordPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 	}
+	
 	if ( pStage->texture.texgen == TG_SKYBOX_CUBE || pStage->texture.texgen == TG_WOBBLESKY_CUBE ) {
 		qglTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
 	}
+#endif	
+
+
+#if !defined(GL_ES_VERSION_2_0)	
 	if ( pStage->texture.texgen == TG_SCREEN ) {
 		qglEnable( GL_TEXTURE_GEN_S );
 		qglEnable( GL_TEXTURE_GEN_T );
@@ -250,6 +309,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 			qglMatrixMode( GL_MODELVIEW );
 		}
 	}
+#endif
 }
 
 /*
@@ -262,12 +322,18 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 	if ( pStage->privatePolygonOffset && !surf->material->TestMaterialFlag(MF_POLYGONOFFSET) ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
-
+#if defined(EGL_WRAP_GL_ES)
+	if (pStage->texture.texgen == TG_DIFFUSE_CUBE || pStage->texture.texgen == TG_SKYBOX_CUBE
+	    || pStage->texture.texgen == TG_WOBBLESKY_CUBE) {
+		GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), (void *)&ac->st);
+	}
+#else
 	if ( pStage->texture.texgen == TG_DIFFUSE_CUBE || pStage->texture.texgen == TG_SKYBOX_CUBE
 		|| pStage->texture.texgen == TG_WOBBLESKY_CUBE ) {
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), (void *)&ac->st );
 	}
-
+#endif
+#if !defined(GL_ES_VERSION_2_0)
 	if ( pStage->texture.texgen == TG_SCREEN ) {
 		qglDisable( GL_TEXTURE_GEN_S );
 		qglDisable( GL_TEXTURE_GEN_T );
@@ -332,6 +398,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglMatrixMode( GL_MODELVIEW );
 		}
 	}
+#endif
 
 	if ( pStage->texture.hasMatrix ) {
 		qglMatrixMode( GL_TEXTURE );
@@ -361,10 +428,14 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	const float	*regs;
 	float		color[4];
 	const srfTriangles_t	*tri;
+#if defined(EGL_WRAP_GL_ES)
+    const float	one[1] = { 1 };
+#endif
 
 	tri = surf->geo;
 	shader = surf->material;
 
+#if !defined(GL_ES_VERSION_2_0)
 	// update the clip plane if needed
 	if ( backEnd.viewDef->numClipPlanes && surf->space != backEnd.currentSpace ) {
 		GL_SelectTexture( 1 );
@@ -376,6 +447,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		qglTexGenfv( GL_S, GL_OBJECT_PLANE, plane.ToFloatPtr() );
 		GL_SelectTexture( 0 );
 	}
+#endif
 
 	if ( !shader->IsDrawn() ) {
 		return;
@@ -432,10 +504,17 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		color[2] = 0;
 		color[3] = 1;
 	}
-
+#if defined(EGL_WRAP_GL_ES)
+	idDrawVert *ac = (idDrawVert *)vertexCache.Position(tri->ambientCache);
+	GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+	GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
+	GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+	GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), reinterpret_cast<void *>(&ac->st));
+#else
 	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
 	qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
+#endif
 
 	bool drawSolid = false;
 
@@ -474,9 +553,14 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			if ( color[3] <= 0 ) {
 				continue;
 			}
+#if defined(EGL_WRAP_GL_ES)
+GL_Uniform4fv(offsetof(shaderProgram_t, glColor), 1, color);
+			GL_Uniform1fv(offsetof(shaderProgram_t, alphaTest), 1, &regs[pStage->alphaTestRegister]);
+#else			
 			qglColor4fv( color );
 
 			qglAlphaFunc( GL_GREATER, regs[ pStage->alphaTestRegister ] );
+#endif
 
 			// bind the texture
 			pStage->texture.image->Bind();
@@ -497,7 +581,12 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 	// draw the entire surface solid
 	if ( drawSolid ) {
+#if defined(EGL_WRAP_GL_ES)
+GL_Uniform4fv(offsetof(shaderProgram_t, glColor), 1, color);
+		GL_Uniform1fv(offsetof(shaderProgram_t, alphaTest), 1, one);
+#else
 		qglColor4fv( color );
+#endif
 		globalImages->whiteImage->Bind();
 
 		// draw it
@@ -515,6 +604,10 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		GL_State( GLS_DEPTHFUNC_LESS );
 	}
 
+#if defined(EGL_WRAP_GL_ES)
+    GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+	GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+#endif
 }
 
 /*
@@ -531,6 +624,12 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 
+#if defined(EGL_WRAP_GL_ES)
+common->Printf("---------- RB_STD_FillDepthBuffer ----------\n");
+
+	GL_UseProgram(&depthFillShader);
+#endif
+#if !defined(GL_ES_VERSION_2_0)
 	// enable the second texture for mirror plane clipping if needed
 	if ( backEnd.viewDef->numClipPlanes ) {
 		GL_SelectTexture( 1 );
@@ -539,10 +638,17 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		qglEnable( GL_TEXTURE_GEN_S );
 		qglTexCoord2f( 1, 0.5 );
 	}
+#endif
 
+#if defined(EGL_WRAP_GL_ES)
+// the first texture will be used for alpha tested surfaces
+	GL_SelectTexture(0);
+	GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+#else
 	// the first texture will be used for alpha tested surfaces
 	GL_SelectTexture( 0 );
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+#endif
 
 	// decal surfaces may enable polygon offset
 	qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() );
@@ -557,13 +663,18 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
 
+#if !defined(GL_ES_VERSION_2_0)
 	if ( backEnd.viewDef->numClipPlanes ) {
 		GL_SelectTexture( 1 );
 		globalImages->BindNull();
 		qglDisable( GL_TEXTURE_GEN_S );
 		GL_SelectTexture( 0 );
 	}
-
+#endif
+#if defined(EGL_WRAP_GL_ES)
+GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+GL_UseProgram(NULL);
+#endif
 }
 
 /*
@@ -610,7 +721,11 @@ void RB_SetProgramEnvironment( bool isPostProcess ) {
 
 	parm[2] = 0;
 	parm[3] = 1;
+#if defined(EGL_WRAP_GL_ES)
+GL_Uniform4fv(offsetof(shaderProgram_t, nonPowerOfTwo), 1, parm);
+#else
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+#endif
 #else
 	// screen power of two correction factor, assuming the copy to _currentRender
 	// also copied an extra row and column for the bilerp
@@ -624,9 +739,29 @@ void RB_SetProgramEnvironment( bool isPostProcess ) {
 
 	parm[2] = 0;
 	parm[3] = 1;
+#if defined(EGL_WRAP_GL_ES)
+	GL_Uniform4fv(offsetof(shaderProgram_t, nonPowerOfTwo), 1, parm);
+#else
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 #endif
+#endif
 
+#if defined(EGL_WRAP_GL_ES)
+// window coord to 0.0 to 1.0 conversion
+	parm[0] = 1.0 / w;
+	parm[1] = 1.0 / h;
+	parm[2] = 0;
+	parm[3] = 1;
+	GL_Uniform4fv(offsetof(shaderProgram_t, windowCoords), 1, parm);
+	//
+	// set eye position in global space
+	//
+	parm[0] = backEnd.viewDef->renderView.vieworg[0];
+	parm[1] = backEnd.viewDef->renderView.vieworg[1];
+	parm[2] = backEnd.viewDef->renderView.vieworg[2];
+	parm[3] = 1.0;
+	GL_UniformMatrix4fv(offsetof(shaderProgram_t, eyeOrigin), 1, GL_FALSE, parm);
+#else
 	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 0, parm );
 
 	// window coord to 0.0 to 1.0 conversion
@@ -649,7 +784,6 @@ void RB_SetProgramEnvironment( bool isPostProcess ) {
 		}
 		qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 4, parm );
 	}
-
 	//
 	// set eye position in global space
 	//
@@ -657,7 +791,9 @@ void RB_SetProgramEnvironment( bool isPostProcess ) {
 	parm[1] = backEnd.viewDef->renderView.vieworg[1];
 	parm[2] = backEnd.viewDef->renderView.vieworg[2];
 	parm[3] = 1.0;
-	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 1, parm );
+	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 1, parm );	
+#endif
+
 
 
 }
@@ -669,6 +805,27 @@ RB_SetProgramEnvironmentSpace
 Sets variables related to the current space that can be used by all vertex programs
 ==================
 */
+#if defined(EGL_WRAP_GL_ES)
+void RB_SetProgramEnvironmentSpace(void)
+{
+	const struct viewEntity_s *space = backEnd.currentSpace;
+
+	// set eye position in local space
+	float	parm[4];
+	R_GlobalPointToLocal(space->modelMatrix, backEnd.viewDef->renderView.vieworg, *(idVec3 *)parm);
+	parm[3] = 1.0;
+	GL_Uniform4fv(offsetof(shaderProgram_t, localEyeOrigin), 1, parm);
+
+	// we need the model matrix without it being combined with the view matrix
+	// so we can transform local vectors to global coordinates
+	GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelMatrix), 1, GL_FALSE, space->modelMatrix);
+
+	// set the modelview matrix for the viewer
+	float	mat[16];
+	myGlMultMatrix(space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat);
+	GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix), 1, GL_FALSE, mat);
+}
+#else
 void RB_SetProgramEnvironmentSpace( void ) {
 	if ( !glConfig.ARBVertexProgramAvailable ) {
 		return;
@@ -700,7 +857,7 @@ void RB_SetProgramEnvironmentSpace( void ) {
 	parm[3] = space->modelMatrix[14];
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 8, parm );
 }
-
+#endif
 /*
 ==================
 RB_STD_T_RenderShaderPasses
@@ -766,16 +923,27 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	}
 
 	if ( surf->space->weaponDepthHack ) {
-		RB_EnterWeaponDepthHack();
+#if defined(EGL_WRAP_GL_ES)
+        RB_EnterWeaponDepthHack(surf);
+#else
+		RB_EnterWeaponDepthHack(surf);
+#endif		
 	}
 
 	if ( surf->space->modelDepthHack != 0.0f ) {
-		RB_EnterModelDepthHack( surf->space->modelDepthHack );
+        RB_EnterModelDepthHack(surf);
 	}
-
+#if defined(EGL_WRAP_GL_ES)
+    idDrawVert *ac = (idDrawVert *)vertexCache.Position(tri->ambientCache);
+	GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+	GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+	GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
+	GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), reinterpret_cast<void *>(&ac->st));
+#else
 	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
 	qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
+#endif
 
 	for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {
 		pStage = shader->GetStage(stage);
@@ -803,7 +971,23 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			// new style stages
 			//
 			//--------------------------
+#if defined(EGL_WRAP_GL_ES)
+            if (r_skipNewAmbient.GetBool()) {
+				continue;
+			}
 
+			GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Color), 4, GL_UNSIGNED_BYTE, false, sizeof(idDrawVert), (void *)&ac->color);
+			GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Tangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[0].ToFloatPtr());
+			GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Bitangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[1].ToFloatPtr());
+			GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Normal), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
+
+			GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Color));	// gl_Color
+			GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Tangent));
+			GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Bitangent));
+			GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Normal));
+
+			GL_State(pStage->drawStateBits);
+#else
 			// completely skip the stage if we don't have the capability
 			if ( tr.backEndRenderer != BE_ARB2 ) {
 				continue;
@@ -822,7 +1006,9 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			qglEnableClientState( GL_NORMAL_ARRAY );
 
 			GL_State( pStage->drawStateBits );
+#endif
 
+#if !defined(EGL_WRAP_GL_ES)
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, newStage->vertexProgram );
 			qglEnable( GL_VERTEX_PROGRAM_ARB );
 
@@ -851,10 +1037,11 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			}
 			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, newStage->fragmentProgram );
 			qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+#endif
 
 			// draw it
 			RB_DrawElementsWithCounters( tri );
-
+#if !defined(EGL_WRAP_GL_ES)
 			for ( int i = 1 ; i < newStage->numFragmentProgramImages ; i++ ) {
 				if ( newStage->fragmentProgramImages[i] ) {
 					GL_SelectTexture( i );
@@ -866,9 +1053,17 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			}
 
 			GL_SelectTexture( 0 );
-
 			qglDisable( GL_VERTEX_PROGRAM_ARB );
 			qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+#endif
+#if defined(EGL_WRAP_GL_ES)
+            			GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Color));	// gl_Color
+			GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Tangent));
+			GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Bitangent));
+			GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Normal));
+#else
+
+			
 			// Fixme: Hack to get around an apparent bug in ATI drivers.  Should remove as soon as it gets fixed.
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, 0 );
 
@@ -876,6 +1071,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			qglDisableVertexAttribArrayARB( 9 );
 			qglDisableVertexAttribArrayARB( 10 );
 			qglDisableClientState( GL_NORMAL_ARRAY );
+#endif						
 			continue;
 		}
 
@@ -904,6 +1100,31 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		}
 
 		// select the vertex color source
+#if defined(EGL_WRAP_GL_ES)
+if (pStage->vertexColor != SVC_IGNORE) {
+			GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Color), 4, GL_UNSIGNED_BYTE, false, sizeof(idDrawVert), (void *)&ac->color);
+			GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Color));
+		}
+
+		static const float zero[4] = { 0, 0, 0, 0 };
+		static const float one[4] = { 1, 1, 1, 1 };
+		static const float negOne[4] = { -1, -1, -1, -1 };
+
+		switch (pStage->vertexColor) {
+			case SVC_IGNORE:
+				GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), 1, zero);
+				GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), 1, one);
+				break;
+			case SVC_MODULATE:
+				GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), 1, one);
+				GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), 1, zero);
+				break;
+			case SVC_INVERSE_MODULATE:
+				GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), 1, negOne);
+				GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), 1, one);
+				break;
+		}
+#else
 		if ( pStage->vertexColor == SVC_IGNORE ) {
 			qglColor4fv( color );
 		} else {
@@ -947,7 +1168,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 				GL_SelectTexture( 0 );
 			}
 		}
-
+#endif
 		// bind the texture
 		RB_BindVariableStageImage( &pStage->texture, regs );
 
@@ -960,7 +1181,15 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		RB_DrawElementsWithCounters( tri );
 
 		RB_FinishStageTexturing( pStage, surf, ac );
+#if defined(EGL_WRAP_GL_ES)
+if (pStage->vertexColor != SVC_IGNORE) {
+			GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Color));
+		}
+	}
 
+	GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+	GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+#else
 		if ( pStage->vertexColor != SVC_IGNORE ) {
 			qglDisableClientState( GL_COLOR_ARRAY );
 
@@ -972,12 +1201,13 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		}
 	}
 
+#endif
 	// reset polygon offset
 	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
-	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {
-		RB_LeaveDepthHack();
+if (surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f) {
+		RB_LeaveDepthHack(surf);
 	}
 }
 
@@ -1007,6 +1237,18 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		isPostProcess = true;
 
 		// only dump if in a 3d view
+#if defined(EGL_WRAP_GL_ES)
+if (backEnd.viewDef->viewEntitys) {
+			globalImages->currentRenderImage->CopyFramebuffer(backEnd.viewDef->viewport.x1,
+			                backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
+			                backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
+		}
+
+		backEnd.currentRenderCopied = true;
+	}
+
+	GL_UseProgram(&defaultShader);
+#else
 		if ( backEnd.viewDef->viewEntitys && tr.backEndRenderer == BE_ARB2 ) {
 			globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
 				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
@@ -1014,13 +1256,16 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 		backEnd.currentRenderCopied = true;
 	}
-
+#endif
 	GL_SelectTexture( 1 );
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
+#if defined(EGL_WRAP_GL_ES)
+GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+#else
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-
+#endif
 	RB_SetProgramEnvironment( isPostProcess );
 
 	// we don't use RB_RenderDrawSurfListWithFunction()
@@ -1048,7 +1293,14 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 
 	GL_Cull( CT_FRONT_SIDED );
+	#if !defined(GL_ES_VERSION_2_0)
 	qglColor3f( 1, 1, 1 );
+	#endif
+#if defined(EGL_WRAP_GL_ES)
+	GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+
+	GL_UseProgram(NULL);
+#endif
 
 	return i;
 }
@@ -1070,6 +1322,148 @@ RB_T_Shadow
 the shadow volumes face INSIDE
 =====================
 */
+#if defined(EGL_WRAP_GL_ES)
+static void RB_T_Shadow(const drawSurf_t *surf)
+{
+	const srfTriangles_t	*tri;
+
+	// set the light position for the vertex program to project the rear surfaces
+	if (surf->space != backEnd.currentSpace) {
+		idVec4 localLight;
+
+		R_GlobalPointToLocal(surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLight.ToVec3());
+		localLight.w = 0.0f;
+		GL_Uniform4fv(offsetof(shaderProgram_t, localLightOrigin), 1, localLight.ToFloatPtr());
+
+		// set the modelview matrix for the viewer
+		float	mat[16];
+
+		myGlMultMatrix(surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat);
+		GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix), 1, GL_FALSE, mat);
+	}
+
+	tri = surf->geo;
+
+	if (!tri->shadowCache) {
+		return;
+	}
+
+	GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+	GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 4, GL_FLOAT, false, sizeof(shadowCache_t),
+			vertexCache.Position(tri->shadowCache));
+
+	// we always draw the sil planes, but we may not need to draw the front or rear caps
+	int	numIndexes;
+	bool external = false;
+
+	if (!r_useExternalShadows.GetInteger()) {
+		numIndexes = tri->numIndexes;
+	} else if (r_useExternalShadows.GetInteger() == 2) {   // force to no caps for testing
+		numIndexes = tri->numShadowIndexesNoCaps;
+	} else if (!(surf->dsFlags & DSF_VIEW_INSIDE_SHADOW)) {
+		// if we aren't inside the shadow projection, no caps are ever needed needed
+		numIndexes = tri->numShadowIndexesNoCaps;
+		external = true;
+	} else if (!backEnd.vLight->viewInsideLight && !(surf->geo->shadowCapPlaneBits & SHADOW_CAP_INFINITE)) {
+		// if we are inside the shadow projection, but outside the light, and drawing
+		// a non-infinite shadow, we can skip some caps
+		if (backEnd.vLight->viewSeesShadowPlaneBits & surf->geo->shadowCapPlaneBits) {
+			// we can see through a rear cap, so we need to draw it, but we can skip the
+			// caps on the actual surface
+			numIndexes = tri->numShadowIndexesNoFrontCaps;
+		} else {
+			// we don't need to draw any caps
+			numIndexes = tri->numShadowIndexesNoCaps;
+		}
+
+		external = true;
+	} else {
+		// must draw everything
+		numIndexes = tri->numIndexes;
+	}
+
+#if !defined(GL_ES_VERSION_2_0)
+	// set depth bounds
+	if (glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool()) {
+		qglDepthBoundsEXT(surf->scissorRect.zmin, surf->scissorRect.zmax);
+	}
+#endif
+
+	// debug visualization
+	if (r_showShadows.GetInteger()) {
+		float color[4];
+
+		if (r_showShadows.GetInteger() == 3) {
+			if (external) {
+				color[0] = 0.1;
+				color[1] = 1;
+				color[2] = 0.1;
+			} else {
+				// these are the surfaces that require the reverse
+				color[0] = 1;
+				color[1] = 0.1;
+				color[2] = 0.1;
+			}
+		} else {
+			// draw different color for turboshadows
+			if (surf->geo->shadowCapPlaneBits & SHADOW_CAP_INFINITE) {
+				if (numIndexes == tri->numIndexes) {
+					color[0] = 1;
+					color[1] = 0.1;
+					color[2] = 0.1;
+				} else {
+					color[0] = 1;
+					color[1] = 0.4;
+					color[2] = 0.1;
+				}
+			} else {
+				if (numIndexes == tri->numIndexes) {
+					color[0] = 0.1;
+					color[1] = 1;
+					color[2] = 0.1;
+				} else if (numIndexes == tri->numShadowIndexesNoFrontCaps) {
+					color[0] = 0.1;
+					color[1] = 1;
+					color[2] = 0.6;
+				} else {
+					color[0] = 0.6;
+					color[1] = 1;
+					color[2] = 0.1;
+				}
+			}
+		}
+
+		color[0] /= backEnd.overBright;
+		color[1] /= backEnd.overBright;
+		color[2] /= backEnd.overBright;
+		color[3] = 1;
+		GL_Uniform4fv(offsetof(shaderProgram_t, glColor), 1, color);
+
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		glDisable(GL_STENCIL_TEST);
+		GL_Cull(CT_TWO_SIDED);
+		RB_DrawShadowElementsWithCounters(tri, numIndexes);
+		GL_Cull(CT_FRONT_SIDED);
+		glEnable(GL_STENCIL_TEST);
+
+		return;
+	}
+
+	// depth-fail stencil shadows
+	if (!external) {
+		glStencilOpSeparate(backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, tr.stencilDecr, GL_KEEP);
+		glStencilOpSeparate(backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, tr.stencilIncr, GL_KEEP);
+	} else {
+		// traditional depth-pass stencil shadows
+		glStencilOpSeparate(backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, tr.stencilIncr);
+		glStencilOpSeparate(backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, tr.stencilDecr);
+	}
+	GL_Cull(CT_TWO_SIDED);
+	RB_DrawShadowElementsWithCounters(tri, numIndexes);
+
+	GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+}
+#else
 static void RB_T_Shadow( const drawSurf_t *surf ) {
 	const srfTriangles_t	*tri;
 
@@ -1246,7 +1640,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 		}
 	}
 }
-
+#endif
 /*
 =====================
 RB_StencilShadowPass
@@ -1287,10 +1681,11 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	}
 
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
-
+#if !defined(GL_ES_VERSION_2_0)
 	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
 		qglEnable( GL_DEPTH_BOUNDS_TEST_EXT );
 	}
+#endif
 
 	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_Shadow );
 
@@ -1299,10 +1694,11 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
-
+#if !defined(GL_ES_VERSION_2_0)
 	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
 		qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
 	}
+#endif
 
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 

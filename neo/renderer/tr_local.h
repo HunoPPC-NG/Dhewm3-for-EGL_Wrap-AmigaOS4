@@ -40,6 +40,10 @@ class idScreenRect; // yay for include recursion
 #include "../renderer/RenderSystem.h"
 #include "../renderer/RenderWorld.h"
 
+#if defined(EGL_WRAP_GL_ES)
+struct shaderProgram_s;
+#endif
+
 class idRenderWorldLocal;
 
 // everything that is needed by the backend needs
@@ -609,6 +613,9 @@ typedef struct {
 	int			faceCulling;
 	int			glStateBits;
 	bool		forceGlState;		// the next GL_State will ignore glStateBits and set everything
+#if defined(EGL_WRAP_GL_ES)
+shaderProgram_s	*currentProgram;
+#endif
 } glstate_t;
 
 
@@ -674,7 +681,9 @@ const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for gu
 typedef enum {
     BE_ARB,
     BE_ARB2,
-  //BE_GLSL,
+    #if defined(EGL_WRAP_GL_ES)
+    BE_GLSL,
+    #endif
   //BE_NV10,
   //BE_NV20,
   //BE_R200,
@@ -1101,13 +1110,16 @@ void		GLimp_SetGamma( unsigned short red[256],
 // These are now taken as 16 bit values, so we can take full advantage
 // of dacs with >8 bits of precision
 
-
 void		GLimp_ResetGamma();
 // resets the gamma to what it was at startup
 
-
 // Returns false if the system only has a single processor
-
+#if defined(EGL_WRAP_GL_ES)
+void 		*GLimp_BackEndSleep(void);
+void		GLimp_FrontEndSleep(void);
+void		GLimp_WakeBackEnd(void *data);
+// these functions implement the dual processor syncronization
+#endif
 void		GLimp_ActivateContext( void );
 void		GLimp_DeactivateContext( void );
 // These are used for managing SMP handoffs of the OpenGL context
@@ -1118,13 +1130,9 @@ void		GLimp_DeactivateContext( void );
 // being immediate returns, which lets us guage how much time is
 // being spent inside OpenGL.
 
-const int GRAB_ENABLE		= (1 << 0);
-const int GRAB_REENABLE		= (1 << 1);
-const int GRAB_HIDECURSOR	= (1 << 2);
-const int GRAB_SETSTATE		= (1 << 3);
-const int GRAB_GRABMOUSE	= (1 << 4);
-const int GRAB_RELATIVEMOUSE = (1 << 5);
-
+const int GRAB_GRABMOUSE	= (1 << 0);
+const int GRAB_HIDECURSOR	= (1 << 1);
+const int GRAB_RELATIVEMOUSE = (1 << 2);
 
 void GLimp_GrabInput(int flags);
 /*
@@ -1249,10 +1257,9 @@ RENDER
 
 ============================================================
 */
-
-void RB_EnterWeaponDepthHack();
-void RB_EnterModelDepthHack( float depth );
-void RB_LeaveDepthHack();
+void RB_EnterWeaponDepthHack(const drawSurf_t *surf);
+void RB_EnterModelDepthHack(const drawSurf_t *surf);
+void RB_LeaveDepthHack(const drawSurf_t *surf);
 void RB_DrawElementsImmediate( const srfTriangles_t *tri );
 void RB_RenderTriangleSurface( const srfTriangles_t *tri );
 void RB_T_RenderTriangleSurface( const drawSurf_t *surf );
@@ -1290,7 +1297,11 @@ void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *sur
 void RB_StencilShadowPass( const drawSurf_t *drawSurfs );
 void RB_STD_DrawView( void );
 void RB_STD_FogAllLights( void );
+#if defined(EGL_WRAP_GL_ES)
+void RB_BakeTextureMatrixIntoTexgen(idPlane lightProject[3]);
+#else
 void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float textureMatrix[16] );
+#endif
 
 /*
 ============================================================
@@ -1302,20 +1313,9 @@ DRAW_*
 
 void	RB_ARB_DrawInteractions( void );
 
-//void	R_R200_Init( void );
-//void	RB_R200_DrawInteractions( void );
-
-//void	R_NV10_Init( void );
-//void	RB_NV10_DrawInteractions( void );
-
-//void	R_NV20_Init( void );
-//void	RB_NV20_DrawInteractions( void );
-
 void	R_ARB2_Init( void );
 void	RB_ARB2_DrawInteractions( void );
 
-//void	R_GLSL_Init( void );
-//void	RB_GLSL_DrawInteractions( void );
 
 void	R_ReloadARBPrograms_f( const idCmdArgs &args );
 int		R_FindARBProgram( GLenum target, const char *program );
@@ -1325,12 +1325,7 @@ typedef enum {
 	VPROG_INTERACTION,
 	VPROG_ENVIRONMENT,
 	VPROG_BUMPY_ENVIRONMENT,
-	//VPROG_R200_INTERACTION,
 	VPROG_STENCIL_SHADOW,
-	//VPROG_NV20_BUMP_AND_LIGHT,
-	//VPROG_NV20_DIFFUSE_COLOR,
-	//VPROG_NV20_SPECULAR_COLOR,
-	//VPROG_NV20_DIFFUSE_AND_SPECULAR_COLOR,
 	VPROG_TEST,
 	FPROG_INTERACTION,
 	FPROG_ENVIRONMENT,
@@ -1392,6 +1387,80 @@ typedef enum {
 	PP_LIGHT_FALLOFF_TQ = 20	// only for NV programs
 } programParameter_t;
 
+#if defined(EGL_WRAP_GL_ES)
+
+/*
+============================================================
+DRAW_GLSL
+
+============================================================
+*/
+
+
+typedef struct shaderProgram_s {
+	GLuint		program;
+
+	GLuint		vertexShader;
+	GLuint		fragmentShader;
+
+	GLint		glColor;
+	GLint		alphaTest;
+	GLint		specularExponent;
+
+	GLint		modelViewProjectionMatrix;
+	GLint		modelMatrix;
+	GLint		textureMatrix;
+
+	GLint		windowCoords;
+	GLint		eyeOrigin;
+	GLint		localEyeOrigin;
+	GLint		localLightOrigin;
+	GLint		localViewOrigin;
+
+	GLint		lightProjectionS;
+	GLint		lightProjectionT;
+	GLint		lightProjectionQ;
+	GLint		lightFalloff;
+
+	GLint		bumpMatrixS;
+	GLint		bumpMatrixT;
+	GLint		diffuseMatrixS;
+	GLint		diffuseMatrixT;
+	GLint		specularMatrixS;
+	GLint		specularMatrixT;
+
+	GLint		colorModulate;
+	GLint		colorAdd;
+
+	GLint		diffuseColor;
+	GLint		specularColor;
+
+	/* gl_... */
+	GLint		attr_TexCoord;
+	GLint		attr_Tangent;
+	GLint		attr_Bitangent;
+	GLint		attr_Normal;
+	GLint		attr_Vertex;
+	GLint		attr_Color;
+
+	GLint		nonPowerOfTwo;
+
+	GLint		u_fragmentMap[MAX_FRAGMENT_IMAGES];
+	GLint		u_vertexParm[MAX_VERTEX_PARMS];
+} shaderProgram_t;
+
+
+/* This file was automatically generated.  Do not edit! */
+void R_ReloadGLSLPrograms_f(const idCmdArgs &args);
+void R_GLSL_Init(void);
+void RB_GLSL_DrawInteractions(void);
+void RB_GLSL_CreateDrawInteractions(const drawSurf_t *surf);
+void RB_GLSL_DrawInteraction(const drawInteraction_t *din);
+extern shaderProgram_t shadowShader;
+extern shaderProgram_t interactionShader;
+extern shaderProgram_t defaultShader;
+extern shaderProgram_t depthFillShader;
+#endif
 
 /*
 ============================================================

@@ -28,10 +28,18 @@ If you have questions concerning this license or the applicable additional terms
 
 //hunoppc
 #include "../sys/platform.h"
+#include "../idlib/precompiled.h"
+#include "../sys/platform.h"
 #include "../renderer/VertexCache.h"
 
 #include "../renderer/tr_local.h"
 
+#if defined(EGL_WRAP_GL_ES)
+//OpenGLES2 is Here HunoPPC 2022
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+//
+#endif
 shaderProgram_t	interactionShader;
 shaderProgram_t	shadowShader;
 shaderProgram_t	defaultShader;
@@ -54,7 +62,7 @@ static void GL_SelectTextureNoClient(int unit)
 {
 	backEnd.glState.currenttmu = unit;
 	glActiveTexture(GL_TEXTURE0 + unit);
-	RB_LogComment("glActiveTexture( %i )\n", unit);
+	common->Printf("glActiveTexture( %i )\n", unit);
 }
 
 /*
@@ -69,38 +77,38 @@ void	RB_GLSL_DrawInteraction(const drawInteraction_t *din)
 	static const float negOne[4] = { -1, -1, -1, -1 };
 
 	// load all the vertex program parameters
-	GL_UniformMatrix4fv(offsetof(shaderProgram_t, textureMatrix), mat4_identity.ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, localLightOrigin), din->localLightOrigin.ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, localViewOrigin), din->localViewOrigin.ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, lightProjectionS), din->lightProjection[0].ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, lightProjectionT), din->lightProjection[1].ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, lightProjectionQ), din->lightProjection[2].ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, lightFalloff), din->lightProjection[3].ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, bumpMatrixS), din->bumpMatrix[0].ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, bumpMatrixT), din->bumpMatrix[1].ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, diffuseMatrixS), din->diffuseMatrix[0].ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, diffuseMatrixT), din->diffuseMatrix[1].ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, specularMatrixS), din->specularMatrix[0].ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, specularMatrixT), din->specularMatrix[1].ToFloatPtr());
+	GL_UniformMatrix4fv(offsetof(shaderProgram_t, textureMatrix), 1, GL_FALSE, mat4_identity.ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, localLightOrigin), 1, din->localLightOrigin.ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, localViewOrigin), 1, din->localViewOrigin.ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, lightProjectionS), 1, din->lightProjection[0].ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, lightProjectionT), 1, din->lightProjection[1].ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, lightProjectionQ), 1, din->lightProjection[2].ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, lightFalloff), 1, din->lightProjection[3].ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, bumpMatrixS), 1, din->bumpMatrix[0].ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, bumpMatrixT), 1, din->bumpMatrix[1].ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, diffuseMatrixS), 1, din->diffuseMatrix[0].ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, diffuseMatrixT), 1, din->diffuseMatrix[1].ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, specularMatrixS), 1, din->specularMatrix[0].ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, specularMatrixT), 1, din->specularMatrix[1].ToFloatPtr());
 
 	switch (din->vertexColor) {
 		case SVC_IGNORE:
-			GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), zero);
-			GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), one);
+			GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), 1, zero);
+			GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), 1, one);
 			break;
 		case SVC_MODULATE:
-			GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), one);
-			GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), zero);
+			GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), 1, one);
+			GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), 1, zero);
 			break;
 		case SVC_INVERSE_MODULATE:
-			GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), negOne);
-			GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), one);
+			GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), 1, negOne);
+			GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), 1, one);
 			break;
 	}
 
 	// set the constant colors
-	GL_Uniform4fv(offsetof(shaderProgram_t, diffuseColor), din->diffuseColor.ToFloatPtr());
-	GL_Uniform4fv(offsetof(shaderProgram_t, specularColor), din->specularColor.ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, diffuseColor), 1, din->diffuseColor.ToFloatPtr());
+	GL_Uniform4fv(offsetof(shaderProgram_t, specularColor), 1, din->specularColor.ToFloatPtr());
 
 	// material may be NULL for shadow volumes
 	float f;
@@ -121,7 +129,7 @@ void	RB_GLSL_DrawInteraction(const drawInteraction_t *din)
 			f = 4.0f;
 			break;
 	}
-	GL_Uniform1fv(offsetof(shaderProgram_t, specularExponent), &f);
+	GL_Uniform1fv(offsetof(shaderProgram_t, specularExponent), 1, &f);
 
 	// set the textures
 
@@ -186,7 +194,7 @@ void RB_GLSL_CreateDrawInteractions(const drawSurf_t *surf)
 		// set the modelview matrix for the viewer
 		float   mat[16];
 		myGlMultMatrix(surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat);
-		GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix), mat);
+		GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix), 1, GL_FALSE, mat);
 
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position(surf->geo->ambientCache);
@@ -321,7 +329,18 @@ void RB_GLSL_DrawInteractions(void)
 }
 
 //===================================================================================
+static char bufferFinal[1024];
+static char *next = bufferFinal;
+char * argument[255];
 
+int printfHunoPPC(const char *fmt, ...) {
+   va_list argp;
+   va_start(argp, fmt);
+   const int ret = idStr::vsnPrintf(next, sizeof bufferFinal-(next-bufferFinal), fmt, argp);
+   next += ret;
+   va_end(argp);
+   return ret;
+}
 
 /*
 =================
@@ -331,8 +350,8 @@ loads GLSL vertex or fragment shaders
 =================
 */
 static void R_LoadGLSLShader(const char *name, shaderProgram_t *shaderProgram, GLenum type)
-{
-	idStr	fullPath = "PROGDIR:gl2progs/";
+{   //HunoPPC 2022
+    idStr	fullPath = "gl2progs/";
 	fullPath += name;
 	char	*fileBuffer;
 	char	*buffer;
@@ -344,14 +363,15 @@ static void R_LoadGLSLShader(const char *name, shaderProgram_t *shaderProgram, G
 	fileSystem->ReadFile(fullPath.c_str(), (void **)&fileBuffer, NULL);
 
 	if (!fileBuffer) {
-		common->Printf(": File not found\n");
-		return;
+	    common->Printf(": File not found\n");
+	    return;
 	}
 
 	// copy to stack memory and free
 	buffer = (char *)_alloca(strlen(fileBuffer) + 1);
 	strcpy(buffer, fileBuffer);
 	fileSystem->FreeFile(fileBuffer);
+
 
 	if (!glConfig.isInitialized) {
 		return;
@@ -389,7 +409,6 @@ static bool R_LinkGLSLShader(shaderProgram_t *shaderProgram, bool needsAttribute
 {
 	char buf[BUFSIZ];
 	int len;
-	GLint status;
 	GLint linked;
 
 	shaderProgram->program = glCreateProgram();
@@ -566,8 +585,6 @@ R_ReloadGLSLPrograms_f
 */
 void R_ReloadGLSLPrograms_f(const idCmdArgs &args)
 {
-	int		i;
-
 	common->Printf("----- R_ReloadGLSLPrograms -----\n");
 
 	if (!RB_GLSL_InitShaders()) {

@@ -238,8 +238,6 @@ void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool inde
 
 	// if we don't have any remaining unused headers, allocate some more
 	if ( freeStaticHeaders.next == &freeStaticHeaders ) {
-        //Check here allocate some headers In HunoPPC 2021
-        common->Printf( "-----Alloc more headers in. Size = %i\n", size );
 
 		for ( int i = 0; i < EXPAND_HEADERS; i++ ) {
 			block = headerAllocator.Alloc();
@@ -252,10 +250,7 @@ void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool inde
 				qglGenBuffersARB( 1, & block->vbo );
 			}
 		}
-        //Check here allocate some headers Out HunoPPC 2021
-        common->Printf( "-----Alloc more headers out Size = %i\n", block->size );
-	
-    }
+	}
 
 	// move it from the freeStaticHeaders list to the staticHeaders list
 	block = freeStaticHeaders.next;
@@ -395,8 +390,6 @@ vertCache_t	*idVertexCache::AllocFrameTemp( void *data, int size ) {
 	// if we don't have any remaining unused headers, allocate some more
 	if ( freeDynamicHeaders.next == &freeDynamicHeaders ) {
 
-        common->Printf( "idVertexCache::AllocFrameTemp: size = %i in\n", size );
-
 		for ( int i = 0; i < EXPAND_HEADERS; i++ ) {
 			block = headerAllocator.Alloc();
 			block->next = freeDynamicHeaders.next;
@@ -404,7 +397,6 @@ vertCache_t	*idVertexCache::AllocFrameTemp( void *data, int size ) {
 			block->next->prev = block;
 			block->prev->next = block;
 		}
-        common->Printf( "idVertexCache::AllocFrameTemp: size = %i end\n", size );
 	}
 
 	// move it from the freeDynamicHeaders list to the dynamicHeaders list

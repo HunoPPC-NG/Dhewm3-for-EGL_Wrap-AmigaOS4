@@ -45,8 +45,14 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef MINIGL_ENABLED
 #include <SDL_opengl.h>
 #else
+#if defined(EGL_WRAP_GL_ES)
+//OpenGLES2 is Here HunoPPC 2022
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#else
 //EGL_Wrap linked Here 2018 HunoPPC
 #include <EGL/gl.h>
+#endif
 #endif
 
 #if defined( ID_DEDICATED ) && defined( _WIN32 )
@@ -541,6 +547,18 @@ extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 #define qglVertex4sv glVertex4sv
 #define qglVertexPointer glVertexPointer
 #define qglViewport glViewport
+
+#if defined(EGL_WRAP_GL_ES)
+
+#define GL_UseProgram glUseProgram
+#define GL_UniformMatrix4fv glUniformMatrix4fv
+#define GL_EnableVertexAttribArray glEnableVertexAttribArray
+#define GL_VertexAttribPointer glVertexAttribPointer
+#define GL_Uniform4fv glUniform4fv
+#define GL_DisableVertexAttribArray glDisableVertexAttribArray
+#define GL_Uniform1fv glUniform1fv
+
+#endif
 
 //HunoPPC 2018
 

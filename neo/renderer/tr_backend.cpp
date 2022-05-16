@@ -30,9 +30,16 @@ If you have questions concerning this license or the applicable additional terms
 #include "../sys/platform.h"
 
 #include "../renderer/tr_local.h"
+//HunoPPC 2022 include ESMatrix, esOrtho and esMatrixLoadIdentity
+#include "EGL/egl_wrap.h"
 
-//HunoPPC 2021
-//#define DISABLE_TEXTURE3D
+#if defined(EGL_WRAP_GL_ES)
+//OpenGLES2 is Here HunoPPC 2022
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+//
+#endif
+
 
 static idCVar r_fillWindowAlphaChan( "r_fillWindowAlphaChan", "-1", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "Make sure alpha channel of windows default framebuffer is completely opaque at the end of each frame. Needed at least when using Wayland.\n 1: do this, 0: don't do it, -1: let dhewm3 decide (default)" );
 
@@ -48,10 +55,16 @@ may touch, including the editor.
 ======================
 */
 void RB_SetDefaultGLState( void ) {
-	int		i;
+	
+	#if defined(EGL_WRAP_GL_ES)
+	GL_UseProgram(NULL);
+	#endif
 
 	qglClearDepth( 1.0f );
+	#if !defined(EGL_WRAP_GL_ES)
+    int		i;
 	qglColor4f (1,1,1,1);
+	#endif
 
 	// the vertex array is always enabled
 	qglEnableClientState( GL_VERTEX_ARRAY );
@@ -70,7 +83,9 @@ void RB_SetDefaultGLState( void ) {
 	qglEnable( GL_BLEND );
 	qglEnable( GL_SCISSOR_TEST );
 	qglEnable( GL_CULL_FACE );
+	#if !defined(EGL_WRAP_GL_ES)
 	qglDisable( GL_LIGHTING );
+	#endif
 	qglDisable( GL_LINE_STIPPLE );
 	qglDisable( GL_STENCIL_TEST );
 
@@ -79,12 +94,13 @@ void RB_SetDefaultGLState( void ) {
 	qglDepthFunc( GL_ALWAYS );
 
 	qglCullFace( GL_FRONT_AND_BACK );
+	#if !defined(EGL_WRAP_GL_ES)
 	qglShadeModel( GL_SMOOTH );
-
+	#endif
 	if ( r_useScissor.GetBool() ) {
 		qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
-
+   #if !defined(EGL_WRAP_GL_ES)
 	for ( i = glConfig.maxTextureUnits - 1 ; i >= 0 ; i-- ) {
 		GL_SelectTexture( i );
 
@@ -103,6 +119,7 @@ void RB_SetDefaultGLState( void ) {
 			qglDisable( GL_TEXTURE_CUBE_MAP_EXT );
 		}
 	}
+   #endif
 }
 
 
@@ -128,7 +145,9 @@ void GL_SelectTexture( int unit ) {
 	}
 
 	qglActiveTextureARB( GL_TEXTURE0_ARB + unit );
+	#if !defined(EGL_WRAP_GL_ES)
 	qglClientActiveTextureARB( GL_TEXTURE0_ARB + unit );
+	#endif
 
 	backEnd.glState.currenttmu = unit;
 }
@@ -349,6 +368,7 @@ void GL_State( int stateBits ) {
 	//
 	// fill/line mode
 	//
+#if !defined(EGL_WRAP_GL_ES)	
 	if ( diff & GLS_POLYMODE_LINE ) {
 		if ( stateBits & GLS_POLYMODE_LINE ) {
 			qglPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
@@ -356,10 +376,12 @@ void GL_State( int stateBits ) {
 			qglPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		}
 	}
+#endif
 
 	//
 	// alpha test
 	//
+#if !defined(EGL_WRAP_GL_ES)
 	if ( diff & GLS_ATEST_BITS ) {
 		switch ( stateBits & GLS_ATEST_BITS ) {
 		case 0:
@@ -382,6 +404,7 @@ void GL_State( int stateBits ) {
 			break;
 		}
 	}
+#endif
 
 	backEnd.glState.glStateBits = stateBits;
 }
@@ -410,11 +433,22 @@ void RB_SetGL2D( void ) {
 	if ( r_useScissor.GetBool() ) {
 		qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
+#if !defined(EGL_WRAP_GL_ES)
 	qglMatrixMode( GL_PROJECTION );
 	qglLoadIdentity();
 	qglOrtho( 0, 640, 480, 0, 0, 1 );		// always assume 640x480 virtual coordinates
 	qglMatrixMode( GL_MODELVIEW );
 	qglLoadIdentity();
+#endif
+
+#if defined(EGL_WRAP_GL_ES)
+esOrtho((ESMatrix *)backEnd.viewDef->projectionMatrix, 0, 640, 480, 0, 0, 1);
+	esMatrixLoadIdentity((ESMatrix *)backEnd.viewDef->worldSpace.modelViewMatrix);
+
+	float	mat[16];
+	myGlMultMatrix(backEnd.viewDef->worldSpace.modelViewMatrix, backEnd.viewDef->projectionMatrix, mat);
+	GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix),1,GL_FALSE, mat);
+#endif
 
 	GL_State( GLS_DEPTHFUNC_ALWAYS |
 			  GLS_SRCBLEND_SRC_ALPHA |
@@ -442,8 +476,9 @@ static void	RB_SetBuffer( const void *data ) {
 	cmd = (const setBufferCommand_t *)data;
 
 	backEnd.frameCount = cmd->frameCount;
-
+#if !defined(EGL_WRAP_GL_ES)
 	qglDrawBuffer( cmd->buffer );
+#endif
 
 	// clear screen for debugging
 	// automatically enable this with several other debug tools
@@ -472,6 +507,8 @@ was there.  This is used to test for texture thrashing.
 ===============
 */
 void RB_ShowImages( void ) {
+	
+#if !defined(EGL_WRAP_GL_ES)
 	int		i;
 	idImage	*image;
 	float	x, y, w, h;
@@ -521,6 +558,7 @@ void RB_ShowImages( void ) {
 
 	end = Sys_Milliseconds();
 	common->Printf( "%i msec to draw all images\n", end - start );
+#endif
 }
 
 
@@ -535,7 +573,7 @@ const void	RB_SwapBuffers( const void *data ) {
 	if ( r_showImages.GetInteger() != 0 ) {
 		RB_ShowImages();
 	}
-
+#if !defined(EGL_WRAP_GL_ES)
 	int fillAlpha = r_fillWindowAlphaChan.GetInteger();
 	if ( fillAlpha == 1 || (fillAlpha == -1 && glConfig.shouldFillWindowAlpha) )
 	{
@@ -601,7 +639,7 @@ const void	RB_SwapBuffers( const void *data ) {
 		if( scissorEnabled )
 			qglEnable( GL_SCISSOR_TEST );
 	}
-
+#endif
 	// force a gl sync if requested
 	if ( r_finish.GetBool() ) {
 		qglFinish();

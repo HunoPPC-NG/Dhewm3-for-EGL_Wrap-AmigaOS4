@@ -391,8 +391,7 @@ static ID_INLINE bool isARBidentifierChar( int c ) {
 void R_LoadARBProgram( int progIndex ) {
 	int		ofs;
 	int		err;
-	//HunoPPC 2018
-	idStr	fullPath = "/PROGDIR/glprogs/";
+	idStr	fullPath = "glprogs/";
 	fullPath += progs[progIndex].name;
 	char	*fileBuffer;
 	char	*buffer;
@@ -400,19 +399,9 @@ void R_LoadARBProgram( int progIndex ) {
 
 	common->Printf( "%s", fullPath.c_str() );
 
-    const char *name;
-    //Original
-    //HunoPPC 2018
-    printf( "R_LoadARBProgram original path == %s\n", fullPath.c_str());
-
-    name = "glprogs/";
-	//HunoPPC 2018
-    printf( "R_LoadARBProgram modified path == %s\n", name);
-
 	// load the program even if we don't support it, so
 	// fs_copyfiles can generate cross-platform data dumps
-	//HunoPPC 2018
-	fileSystem->ReadFile( /*fullPath.c_str()*/name, (void **)&fileBuffer, NULL );
+	fileSystem->ReadFile( fullPath.c_str(), (void **)&fileBuffer, NULL );
 	if ( !fileBuffer ) {
 		common->Printf( ": File not found\n" );
 		return;
@@ -657,9 +646,11 @@ void R_ReloadARBPrograms_f( const idCmdArgs &args ) {
 	int		i;
 
 	common->Printf( "----- R_ReloadARBPrograms -----\n" );
+	
 	for ( i = 0 ; progs[i].name[0] ; i++ ) {
 		R_LoadARBProgram( i );
 	}
+	common->Printf("-------------------------------\n");
 }
 
 /*
@@ -671,7 +662,8 @@ R_ARB2_Init
 void R_ARB2_Init( void ) {
 	glConfig.allowARB2Path = false;
 
-	common->Printf( "ARB2 renderer: " );
+#if !defined(EGL_WRAP_GL_ES)
+	common->Printf( "---------- R_ARB2 renderer Init ----------\n" );
 
 	if ( !glConfig.ARBVertexProgramAvailable || !glConfig.ARBFragmentProgramAvailable ) {
 		common->Printf( "Not available.\n" );
@@ -679,6 +671,8 @@ void R_ARB2_Init( void ) {
 	}
 
 	common->Printf( "Available.\n" );
+	common->Printf("---------------------------------\n");
 
 	glConfig.allowARB2Path = true;
+#endif
 }
