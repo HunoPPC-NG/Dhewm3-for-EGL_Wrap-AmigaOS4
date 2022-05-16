@@ -296,8 +296,6 @@ void idGameLocal::Init( void ) {
 	const idDict *dict;
 	idAAS *aas;
 
-    Printf( "Enter on Game Init Game_local.cpp\n" );
-
 #ifndef GAME_DLL
 
 	TestGameAPI();
@@ -306,15 +304,12 @@ void idGameLocal::Init( void ) {
 
 	// initialize idLib
 	idLib::Init();
-    Printf( "----- Initializing idLib::Init -----\n" );
 
 	// register static cvars declared in the game
 	idCVar::RegisterStaticVars();
-    Printf( "----- Initializing idCVar::RegisterStaticVars -----\n" );
 
 	// initialize processor specific SIMD
 	idSIMD::InitProcessor( "game", com_forceGenericSIMD.GetBool() );
-    Printf( "----- idSIMD::InitProcessor -----\n" );
 
 #endif
 
