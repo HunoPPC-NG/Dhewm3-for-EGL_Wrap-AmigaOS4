@@ -254,6 +254,9 @@ void Sys_Init( void ) {
 	com_pid.SetInteger( getpid() );
 	common->Printf( "pid: %d\n", com_pid.GetInteger() );
 	common->Printf( "%d MB System Memory\n", Sys_GetSystemRam() );
+#if defined(EGL_WRAP_GL_ES)
+	common->Printf("%d MB Video Memory\n", Sys_GetVideoRam());
+#endif
 }
 
 /*
@@ -327,7 +330,7 @@ char *Sys_GetClipboardData(void) {
 }
 
 void Sys_FreeClipboardData( char* data ) {
-assert( 0 && "why is this called, Sys_GetClipboardData() isn't implemented for SDL1.2" );
+	assert( 0 && "why is this called, Sys_GetClipboardData() isn't implemented for SDL1.2" );
 }
 
 void Sys_SetClipboardData( const char *string ) {
@@ -514,7 +517,7 @@ void tty_Show() {
 }
 
 void tty_FlushIn() {
-  char key;
+  int key;
   while ( ( key = getchar() ) != EOF ) {
 	  Sys_Printf( "'%d' ", key );
   }
@@ -530,7 +533,7 @@ Return NULL if a complete line is not ready.
 */
 char *Sys_ConsoleInput( void ) {
 	if ( tty_enabled ) {
-		char	key;
+		int	key;
 		bool	hidden = false;
 		while ( ( key = getchar() ) != EOF ) {
 			if ( !hidden ) {
