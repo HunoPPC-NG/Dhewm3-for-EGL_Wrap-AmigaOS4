@@ -36,6 +36,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../sys/sys_public.h"
 
+typedef unsigned long OS4_threadIDENTIFIER;
+
 static SDL_mutex	*mutex[MAX_CRITICAL_SECTIONS] = { };
 static SDL_cond		*cond[MAX_TRIGGER_EVENTS] = { };
 static bool			signaled[MAX_TRIGGER_EVENTS] = { };
@@ -43,6 +45,9 @@ static bool			waiting[MAX_TRIGGER_EVENTS] = { };
 
 static xthreadInfo	*thread[MAX_THREADS] = { };
 static size_t		thread_count = 0;
+
+static bool mainThreadIDset = false;
+static OS4_threadIDENTIFIER mainThreadID = -1;
 
 /*
 ==============
@@ -68,6 +73,9 @@ Sys_InitThreads
 ==================
 */
 void Sys_InitThreads() {
+	mainThreadID = SDL_ThreadID();
+	mainThreadIDset = true;
+
 	// critical sections
 	for (int i = 0; i < MAX_CRITICAL_SECTIONS; i++) {
 		mutex[i] = SDL_CreateMutex();
@@ -110,11 +118,9 @@ void Sys_ShutdownThreads() {
 			continue;
 
 		Sys_Printf("WARNING: Thread '%s' still running\n", thread[i]->name);
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-		// TODO no equivalent in SDL2
-#else
+
 		SDL_KillThread(thread[i]->threadHandle);
-#endif
+
 		thread[i] = NULL;
 	}
 
@@ -223,11 +229,7 @@ Sys_CreateThread
 void Sys_CreateThread(xthread_t function, void *parms, xthreadInfo& info, const char *name) {
 	Sys_EnterCriticalSection();
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	SDL_Thread *t = SDL_CreateThread(function, name, parms);
-#else
 	SDL_Thread *t = SDL_CreateThread(function, parms);
-#endif
 
 	if (!t) {
 		common->Error("ERROR: SDL_thread for '%s' failed\n", name);
@@ -313,4 +315,19 @@ const char *Sys_GetThreadName(int *index) {
 	Sys_LeaveCriticalSection();
 
 	return "main";
+}
+
+
+/*
+==================
+Sys_IsMainThread
+returns true if the current thread is the main thread
+==================
+*/
+bool Sys_IsMainThread() {
+	if ( mainThreadIDset )
+		return SDL_ThreadID() == mainThreadID;
+	// if this is called before mainThreadID is set, we haven't created
+	// any threads yet so it should be the main thread
+	return true;
 }

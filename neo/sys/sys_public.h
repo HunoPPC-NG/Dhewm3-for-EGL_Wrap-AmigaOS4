@@ -35,13 +35,40 @@ typedef enum {
 	CPUID_NONE							= 0x00000,
 	CPUID_UNSUPPORTED					= 0x00001,	// unsupported (386/486)
 	CPUID_GENERIC						= 0x00002,	// unrecognized processor
+	CPUID_INTEL							= 0x00004,	// Intel
+	CPUID_AMD							= 0x00008,	// AMD
 	CPUID_MMX							= 0x00010,	// Multi Media Extensions
 	CPUID_3DNOW							= 0x00020,	// 3DNow!
 	CPUID_SSE							= 0x00040,	// Streaming SIMD Extensions
 	CPUID_SSE2							= 0x00080,	// Streaming SIMD Extensions 2
 	CPUID_SSE3							= 0x00100,	// Streaming SIMD Extentions 3 aka Prescott's New Instructions
 	CPUID_ALTIVEC						= 0x00200,	// AltiVec
+	CPUID_HTT							= 0x01000,	// Hyper-Threading Technology
+	CPUID_CMOV							= 0x02000,	// Conditional Move (CMOV) and fast floating point comparison (FCOMI) instructions
+	CPUID_FTZ							= 0x04000,	// Flush-To-Zero mode (denormal results are flushed to zero)
+	CPUID_DAZ							= 0x08000	// Denormals-Are-Zero mode (denormal source operands are set to zero)
 } cpuidSimd_t;
+typedef enum {
+	FPU_EXCEPTION_INVALID_OPERATION		= 1,
+	FPU_EXCEPTION_DENORMALIZED_OPERAND	= 2,
+	FPU_EXCEPTION_DIVIDE_BY_ZERO		= 4,
+	FPU_EXCEPTION_NUMERIC_OVERFLOW		= 8,
+	FPU_EXCEPTION_NUMERIC_UNDERFLOW		= 16,
+	FPU_EXCEPTION_INEXACT_RESULT		= 32
+} fpuExceptions_t;
+
+typedef enum {
+	FPU_PRECISION_SINGLE				= 0,
+	FPU_PRECISION_DOUBLE				= 1,
+	FPU_PRECISION_DOUBLE_EXTENDED		= 2
+} fpuPrecision_t;
+
+typedef enum {
+	FPU_ROUNDING_TO_NEAREST				= 0,
+	FPU_ROUNDING_DOWN					= 1,
+	FPU_ROUNDING_UP						= 2,
+	FPU_ROUNDING_TO_ZERO				= 3
+} fpuRounding_t;
 
 typedef enum {
 	AXIS_SIDE,
@@ -123,6 +150,7 @@ unsigned int	Sys_Milliseconds( void );
 
 // returns a selection of the CPUID_* flags
 int				Sys_GetProcessorId( void );
+const char 	*Sys_GetProcessorString(void);
 
 // sets the FPU precision
 void			Sys_FPU_SetPrecision();
@@ -135,6 +163,11 @@ void			Sys_FPU_SetDAZ( bool enable );
 
 // returns amount of system ram
 int				Sys_GetSystemRam( void );
+
+#if defined(EGL_WRAP_GL_ES)
+// returns amount of video ram
+int				Sys_GetVideoRam(void);
+#endif
 
 // returns amount of drive space in path
 int				Sys_GetDriveFreeSpace( const char *path );

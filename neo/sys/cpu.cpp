@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <float.h>
 
 //hunoppc
-#include <SDL/SDL_cpuinfo.h>
+#include <EGLSDL/SDL_cpuinfo.h>
 
 // MSVC header intrin.h uses strcmp and errors out when not set
 #define IDSTR_NO_REDIRECT
@@ -221,6 +221,16 @@ int Sys_GetProcessorId( void ) {
 		flags |= CPUID_ALTIVEC;
 
 	return flags;
+}
+
+/*
+===============
+Sys_GetProcessorString
+===============
+*/
+const char *Sys_GetProcessorString(void)
+{
+	return "generic";
 }
 
 /*

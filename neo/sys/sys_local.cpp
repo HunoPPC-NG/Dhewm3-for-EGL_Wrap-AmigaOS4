@@ -32,7 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../sys/sys_local.h"
 
-int debugEGL = 0;
 
 const char * sysLanguageNames[] = {
 	"english", "spanish", "italian", "german", "french", "russian",

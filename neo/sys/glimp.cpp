@@ -5,7 +5,7 @@ Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
+ 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -26,8 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 //hunoppc
-#include <SDL/SDL.h>
-#include <SDL/SDL_syswm.h>
+#include <EGLSDL/SDL.h>
+#include <EGLSDL/SDL_syswm.h>
 
 #include "../sys/platform.h"
 #include "../framework/Licensee.h"
@@ -35,22 +35,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "../renderer/tr_local.h"
 
 
-//HunoPPC 2022
-#define ACTIVE_NEW_GLIMP
-
-idCVar in_nograb("in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "prevents input grabbing");
-idCVar r_waylandcompat("r_waylandcompat", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "wayland compatible framebuffer");
-
-static bool grabbed = false;
-
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-static SDL_Window *window = NULL;
-static SDL_GLContext context = NULL;
-#else
 static SDL_Surface *window = NULL;
 #define SDL_WINDOW_OPENGL SDL_OPENGL
 #define SDL_WINDOW_FULLSCREEN SDL_FULLSCREEN
-#endif
+
 
 static void SetSDLIcon()
 {
@@ -77,11 +65,8 @@ static void SetSDLIcon()
 			d3_icon.bytes_per_pixel*8, d3_icon.bytes_per_pixel*d3_icon.width,
 			rmask, gmask, bmask, amask);
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	SDL_SetWindowIcon(window, icon);
-#else
+
 	SDL_WM_SetIcon(icon, NULL);
-#endif
 
 	SDL_FreeSurface(icon);
     #endif
@@ -184,30 +169,7 @@ bool GLimp_Init(glimpParms_t parms) {
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, parms.multiSamples ? 1 : 0);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples);
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-		window = SDL_CreateWindow(GAME_NAME,
-									SDL_WINDOWPOS_UNDEFINED,
-									SDL_WINDOWPOS_UNDEFINED,
-									parms.width, parms.height, flags);
-
-		if (!window) {
-			common->DPrintf("Couldn't set GL mode %d/%d/%d: %s",
-							channelcolorbits, tdepthbits, tstencilbits, SDL_GetError());
-			continue;
-		}
-
-		context = SDL_GL_CreateContext(window);
-
-		if (SDL_GL_SetSwapInterval(r_swapInterval.GetInteger()) < 0)
-			common->Warning("SDL_GL_SWAP_CONTROL not supported");
-
-		SDL_GetWindowSize(window, &glConfig.vidWidth, &glConfig.vidHeight);
-
-		SetSDLIcon(); // for SDL2  this must be done after creating the window
-
-		glConfig.isFullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) == SDL_WINDOW_FULLSCREEN;
-#else
-		
+		#ifdef __amigaos4__
         #ifdef _choice_dhewm3
         SDL_WM_SetCaption(GAME_NAME, GAME_NAME);
         #endif
@@ -223,9 +185,11 @@ bool GLimp_Init(glimpParms_t parms) {
         #ifdef _choice_cdoom
         SDL_WM_SetCaption(GAME_NAME_CDOOM, GAME_NAME_CDOOM);
         #endif
+        #endif
 
-
-		SetSDLIcon(); // for SDL1.2  this must be done before creating the window
+		#ifndef __amigaos4__
+		SetSDLIcon();
+		#endif
 
 		if (SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, r_swapInterval.GetInteger()) < 0)
 			common->Warning("SDL_GL_SWAP_CONTROL not supported");
@@ -241,7 +205,6 @@ bool GLimp_Init(glimpParms_t parms) {
 		glConfig.vidHeight = window->h;
 
 		glConfig.isFullscreen = (window->flags & SDL_FULLSCREEN) == SDL_FULLSCREEN;
-#endif
 
 		common->Printf("Using %d color bits, %d depth, %d stencil display\n",
 						channelcolorbits, tdepthbits, tstencilbits);
@@ -280,18 +243,6 @@ GLimp_Shutdown
 */
 void GLimp_Shutdown() {
 	common->Printf("Shutting down OpenGL subsystem\n");
-
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	if (context) {
-		SDL_GL_DeleteContext(context);
-		context = NULL;
-	}
-
-	if (window) {
-		SDL_DestroyWindow(window);
-		window = NULL;
-	}
-#endif
 }
 
 /*
@@ -300,11 +251,8 @@ GLimp_SwapBuffers
 ===================
 */
 void GLimp_SwapBuffers() {
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	SDL_GL_SwapWindow(window);
-#else
 	SDL_GL_SwapBuffers();
-#endif
+
 }
 
 static bool gammaOrigError = false;
@@ -326,24 +274,16 @@ void GLimp_SetGamma(unsigned short red[256], unsigned short green[256], unsigned
 
 	if ( !gammaOrigSet ) {
 		gammaOrigSet = true;
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-		if ( SDL_GetWindowGammaRamp( window, gammaOrigRed, gammaOrigGreen, gammaOrigBlue ) == -1 ) {
-#else
 		if ( SDL_GetGammaRamp( gammaOrigRed, gammaOrigGreen, gammaOrigBlue ) == -1 ) {
-#endif
 			gammaOrigError = true;
 			common->Warning( "Failed to get Gamma Ramp: %s\n", SDL_GetError() );
 		}
 	}
 
-
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	if (SDL_SetWindowGammaRamp(window, red, green, blue))
-#else
 	if (SDL_SetGammaRamp(red, green, blue))
-#endif
 		common->Warning("Couldn't set gamma ramp: %s", SDL_GetError());
 }
+
 /*
 =================
 GLimp_ResetGamma
@@ -359,13 +299,10 @@ void GLimp_ResetGamma() {
 	}
 
 	if( gammaOrigSet ) {
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-		SDL_SetWindowGammaRamp( window, gammaOrigRed, gammaOrigGreen, gammaOrigBlue );
-#else
 		SDL_SetGammaRamp( gammaOrigRed, gammaOrigGreen, gammaOrigBlue );
-#endif
 	}
 }
+
 
 /*
 =================
@@ -397,28 +334,12 @@ GLExtension_t GLimp_ExtensionPointer(const char *name) {
 }
 
 void GLimp_GrabInput(int flags) {
-	bool grab = flags & GRAB_ENABLE;
-
-	if (grab && (flags & GRAB_REENABLE))
-		grab = false;
-
-	if (flags & GRAB_SETSTATE)
-		grabbed = grab;
-
-	if (in_nograb.GetBool())
-		grab = false;
-
 	if (!window) {
 		common->Warning("GLimp_GrabInput called without window");
 		return;
 	}
-
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	SDL_ShowCursor(flags & GRAB_HIDECURSOR ? SDL_DISABLE : SDL_ENABLE);
-	SDL_SetRelativeMouseMode((grab && (flags & GRAB_HIDECURSOR)) ? SDL_TRUE : SDL_FALSE);
-	SDL_SetWindowGrab(window, grab ? SDL_TRUE : SDL_FALSE);
-#else
-	SDL_ShowCursor(flags & GRAB_HIDECURSOR ? SDL_DISABLE : SDL_ENABLE);
-	SDL_WM_GrabInput(grab ? SDL_GRAB_ON : SDL_GRAB_OFF);
-#endif
+	SDL_ShowCursor( (flags & GRAB_HIDECURSOR) ? SDL_DISABLE : SDL_ENABLE );
+	// ignore GRAB_GRABMOUSE, SDL1.2 doesn't support grabbing without relative mode
+	// so only grab if we want relative mode
+	SDL_WM_GrabInput( (flags & GRAB_RELATIVEMOUSE) ? SDL_GRAB_ON : SDL_GRAB_OFF );
 }
