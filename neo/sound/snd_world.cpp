@@ -25,7 +25,6 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-
 //hunoppc
 #include "../sys/platform.h"
 #include "../framework/FileSystem.h"
@@ -66,9 +65,12 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 			listenerAreFiltersInitialized = true;
 
 			alGetError();
-			//soundSystemLocal.alGenFilters(2, listenerFilters);
+			#ifdef __amigaos4__
 			//HunoPPC 2020
 			soundSystemLocal.alGenFilters(1, listenerFilters);
+			#else
+			soundSystemLocal.alGenFilters(2, listenerFilters);
+			#endif
 			ALuint e = alGetError();
 			if (e != AL_NO_ERROR) {
 				common->Warning("idSoundWorldLocal::Init: alGenFilters failed: 0x%x", e);

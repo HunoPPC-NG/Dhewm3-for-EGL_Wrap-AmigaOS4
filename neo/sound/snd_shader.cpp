@@ -25,7 +25,6 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-
 //hunoppc
 #include "../sys/platform.h"
 #include "../framework/FileSystem.h"

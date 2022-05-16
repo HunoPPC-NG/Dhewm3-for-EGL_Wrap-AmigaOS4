@@ -3,7 +3,6 @@
 
 #ifndef __EFXLIBH
 #define __EFXLIBH
-
 //hunoppc
 #include "../idlib/containers/List.h"
 #include "../idlib/Str.h"
