@@ -2,7 +2,7 @@ CC=gcc -O3
 CXX=g++ -O3
 
 INCS = -I "../../../cm" -I "../../../framework" -I "../../../game" -I "../../../idlib" -I "../../../renderer" -I "../../../sound" -I "../../../sys" -I "../../../tools" -I "../../../ui"
-CFLAGS=  $(BUILDCFLAGS) $(INCS) -Wall -DNDEBUG -D_choice_dhewm3 -Dbase_EXPORTS -DD3_SIZEOFPTR=4 -D__DOOM_DLL__ -ffast-math -fvisibility=hidden -fomit-frame-pointer -fno-strict-aliasing -Wno-sign-compare -Wno-switch -Wno-format-security $(BUILDCFLAGS) $(BUILDCFLAGS2) $(BUILDCFLAGS3)
+CFLAGS=  $(BUILDCFLAGS) $(INCS) -Wall -DNDEBUG -D_choice_dhewm3 -Dbase_EXPORTS -DD3_SIZEOFPTR=4 -D__DOOM_DLL__ -DEGL_WRAP_GL_ES -ffast-math -fvisibility=hidden -fomit-frame-pointer -fno-strict-aliasing -Wno-sign-compare -Wno-switch -Wno-format-security $(BUILDCFLAGS) $(BUILDCFLAGS2) $(BUILDCFLAGS3)
 
 
 all: build-core 
@@ -46,6 +46,7 @@ DOOM3OBJS = \
 	renderer/VertexCache.o \
     renderer/draw_arb.o \
 	renderer/draw_arb2.o \
+	renderer/draw_glsl.o \
 	renderer/draw_common.o \
 	renderer/tr_backend.o \
 	renderer/tr_deform.o \
@@ -213,7 +214,7 @@ DOOM3OBJS = \
     sys/cpu.o \
 	sys/threads.o \
 	sys/events.o \
-    sys/glimp.o \
+    sys/glimpes2.o \
 	sys/sys_local.o \
 	sys/posix/posix_net.o \
 	sys/posix/posix_main.o \
@@ -222,9 +223,9 @@ DOOM3OBJS = \
 
 build-core:
 	mkdir -p objects/dhewm3 objects/dhewm3/game objects/dhewm3/renderer objects/dhewm3/framework objects/dhewm3/framework/async objects/dhewm3/framework/minizip objects/dhewm3/cm objects/dhewm3/dmap objects/dhewm3/aas objects/dhewm3/roq objects/dhewm3/renderbump objects/dhewm3/snd objects/dhewm3/ui objects/dhewm3/tools objects/dhewm3/tools/compilers objects/dhewm3/tools/compilers/dmap objects/dhewm3/tools/compilers/aas objects/dhewm3/tools/compilers/renderbump objects/dhewm3/tools/compilers/roqvq objects/dhewm3/tools/guied objects/dhewm3/sound objects/dhewm3/idlib objects/dhewm3/idlib/bv objects/dhewm3/idlib/geometry objects/dhewm3/idlib/hashing  objects/dhewm3/idlib/math objects/dhewm3/idlib/containers objects/dhewm3/sys objects/dhewm3/sys/posix objects/dhewm3/sys/amigaos4 objects/dhewm3/game objects/dhewm3/game/idlib objects/dhewm3/game/ai objects/dhewm3/game/anim objects/dhewm3/game/gamesys objects/dhewm3/game/physics objects/dhewm3/game/script 
-	cd objects/dhewm3 && $(MAKE) -f ../../Makefile-Dhewm3 dhewm3 VPATH=../../../ BUILDCFLAGS=-D__DOOM_DLL__  BUILDCFLAGS2=  BUILDCFLAGS3=
+	cd objects/dhewm3 && $(MAKE) -f ../../Makefile-Dhewm3 dhewm3-glsl VPATH=../../../ BUILDCFLAGS=-D__DOOM_DLL__  BUILDCFLAGS2=  BUILDCFLAGS3=
 
-dhewm3: .dirscreated $(DOOM3OBJS)
+dhewm3-glsl: .dirscreated $(DOOM3OBJS)
 	$(CC) $(HOSTCFLAGS) $(CFLAGS) $(DOOM3OBJS)  -ldldoom -ljpegdoom3 -lopenal -lvorbisfile -lvorbis -logg -lz -lcurl -lssl -lcrypto -lrtmp -lpthread -lstdc++ -lSDLegl_wrap -use-dynld -legl_wrap -lauto -o $@
 
 clean:
