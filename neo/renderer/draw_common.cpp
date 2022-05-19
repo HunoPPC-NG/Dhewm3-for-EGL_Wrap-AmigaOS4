@@ -923,11 +923,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	}
 
 	if ( surf->space->weaponDepthHack ) {
-#if defined(EGL_WRAP_GL_ES)
-        RB_EnterWeaponDepthHack(surf);
-#else
-		RB_EnterWeaponDepthHack(surf);
-#endif		
+		RB_EnterWeaponDepthHack();
 	}
 
 	if ( surf->space->modelDepthHack != 0.0f ) {
@@ -2151,7 +2147,7 @@ void	RB_STD_DrawView( void ) {
 	// subviews
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
-	// main light renderer //HunoPPC 2018
+	// main light renderer //HunoPPC 2022
 	switch( tr.backEndRenderer ) {
     case BE_ARB:
 		RB_ARB_DrawInteractions();
@@ -2159,18 +2155,11 @@ void	RB_STD_DrawView( void ) {
 	case BE_ARB2:
 		RB_ARB2_DrawInteractions();
 		break;
-//	case BE_GLSL:
-//		RB_GLSL_DrawInteractions();
-//		break;
-//	case BE_NV20:
-//		RB_NV20_DrawInteractions();
-//		break;
-//	case BE_NV10:
-//		RB_NV10_DrawInteractions();
-//		break;
-//	case BE_R200:
-//		RB_R200_DrawInteractions();
-//		break;
+#if defined(EGL_WRAP_GL_ES)
+	case BE_GLSL:
+		RB_GLSL_DrawInteractions();
+		break;
+#endif		
 	}
 
 	// disable stencil shadow test
