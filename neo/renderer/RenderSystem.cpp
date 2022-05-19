@@ -564,6 +564,7 @@ void idRenderSystemLocal::SetBackEndRenderer() {
     #if defined(EGL_WRAP_GL_ES)
 		case BE_GLSL:
 		common->Printf( "using GLSL AmigaOS4 renderSystem\n" );
+		backEndRendererHasVertexPrograms = true;
 		backEndRendererMaxLight = 999;
 		break;
     #endif

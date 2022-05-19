@@ -103,10 +103,9 @@ idCVar r_swapInterval( "r_swapInterval", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVA
 
 idCVar r_gamma( "r_gamma", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables", 0.5f, 3.0f );
 idCVar r_brightness( "r_brightness", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables", 0.5f, 2.0f );
-idCVar r_gammaInShader( "r_gammaInShader", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Set gamma and brightness in shaders instead using hardware gamma" );
+idCVar r_gammaInShader( "r_gammaInShader", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Set gamma and brightness in shaders instead using hardware gamma" );
 
-//HunoPPC 2022 REPLACE best by force arb for my all tests on first time... after on GLSL with a newer driver ES2
-idCVar r_renderer( "r_renderer", "arb", CVAR_RENDERER | CVAR_ARCHIVE, "hardware specific renderer path to use", r_rendererArgs, idCmdSystem::ArgCompletion_String<r_rendererArgs> );
+idCVar r_renderer( "r_renderer", "best", CVAR_RENDERER | CVAR_ARCHIVE, "hardware specific renderer path to use", r_rendererArgs, idCmdSystem::ArgCompletion_String<r_rendererArgs> );
 
 idCVar r_jitter( "r_jitter", "0", CVAR_RENDERER | CVAR_BOOL, "randomly subpixel jitter the projection matrix" );
 
@@ -245,7 +244,6 @@ idCVar r_useCarmacksReverse( "r_useCarmacksReverse", "1", CVAR_RENDERER | CVAR_A
 idCVar r_useStencilOpSeparate( "r_useStencilOpSeparate", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Use glStencilOpSeparate() (if available) when rendering shadows" );
 
 // define qgl functions
-//#define QGLPROC(name, rettype, args) rettype (APIENTRYP q##name) args;
 //hunoppc 2018
 #include "../renderer/qgl_proc.h"
 
@@ -572,33 +570,43 @@ typedef struct vidmode_s {
 	const char *description;
 	int         width, height;
 } vidmode_t;
-
+//Addition of several video modes by HunoPPC 2022
 vidmode_t r_vidModes[] = {
 	{ "Mode  0: 320x240",		320,	240 },
 	{ "Mode  1: 400x300",		400,	300 },
 	{ "Mode  2: 512x384",		512,	384 },
 	{ "Mode  3: 640x480",		640,	480 },
-	{ "Mode  4: 800x600",		800,	600 },
-	{ "Mode  5: 1024x768",		1024,	768 },
-	{ "Mode  6: 1152x864",		1152,	864 },
-	{ "Mode  7: 1280x1024",		1280,	1024 },
-	{ "Mode  8: 1600x1200",		1600,	1200 },
-	// DG: from here on: modes I added.
-	{ "Mode  9: 1280x720",		1280,	720 },
-	{ "Mode 10: 1366x768",		1366,	768 },
-	{ "Mode 11: 1440x900",		1440,	900 },
-	{ "Mode 12: 1400x1050",		1400,	1050 },
-	{ "Mode 13: 1600x900",		1600,	900 },
-	{ "Mode 14: 1680x1050",		1680,	1050 },
-	{ "Mode 15: 1920x1080",		1920,	1080 },
-	{ "Mode 16: 1920x1200",		1920,	1200 },
-	{ "Mode 17: 2048x1152",		2048,	1152 },
-	{ "Mode 18: 2560x1600",		2560,	1600 },
-	{ "Mode 19: 3200x2400",		3200,	2400 },
-	{ "Mode 20: 3840x2160",		3840,   2160 },
-	{ "Mode 21: 4096x2304",		4096,   2304 },
-	{ "Mode 22: 2880x1800",		2880,   1800 },
-	{ "Mode 23: 2560x1440",		2560,   1440 },
+	{ "Mode  4: 720x405",		720,	405 },
+	{ "Mode  5: 720x480",		720,	480 },
+	{ "Mode  6: 720x576",		720,	576 },
+	{ "Mode  7: 800x600",		800,	600 },
+	{ "Mode  8: 960x540",		960,	540 },
+	{ "Mode  9: 960x600",		960,	600 },
+	{ "Mode  10: 960x720",		960,	720 },
+	{ "Mode  11: 1024x576",		1024,	576 },
+	{ "Mode  12: 1024x640",		1024,	640 },
+	{ "Mode  13: 1024x768",		1024,	768 },
+	{ "Mode  14: 1152x864",		1152,	864 },
+	{ "Mode  15: 1280x720",		1280,	720 },
+	{ "Mode  16: 1280x768",		1280,	768 },
+	{ "Mode  17: 1280x960",		1280,	960 },
+	{ "Mode  18: 1280x1024",	1280,	1024 },
+	{ "Mode  19: 1440x810",		1440,	810  },
+	{ "Mode  20: 1440x900",		1440,	900  },
+	{ "Mode  21: 1440x1080",	1440,	1080 },
+	{ "Mode  22: 1600x900",		1600,	900  },
+	{ "Mode  23: 1600x1000",	1600,	1000 },
+	{ "Mode  24: 1600x1200",	1600,	1200 },
+	{ "Mode  25: 1920x1080",	1920,	1080 },
+	{ "Mode  26: 1920x1200",	1920,	1200 },
+	{ "Mode  27: 1920x1440",	1920,	1440 },
+	{ "Mode  28: 2048x1152",	2048,	1152 },
+	{ "Mode  29: 2560x1600",	2560,	1600 },
+	{ "Mode  30: 3200x2400",	3200,	2400 },
+	{ "Mode  31: 3840x2160",	3840,   2160 },
+	{ "Mode  32: 4096x2304",	4096,   2304 },
+	{ "Mode  33: 2880x1800",	2880,   1800 },
+	{ "Mode  34: 2560x1440",	2560,   1440 },
 };
 // DG: made this an enum so even stupid compilers accept it as array length below
 enum {	s_numVidModes = sizeof( r_vidModes ) / sizeof( r_vidModes[0] ) };
