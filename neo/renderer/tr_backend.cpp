@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -116,7 +117,7 @@ void RB_SetDefaultGLState( void ) {
 			qglDisable( GL_TEXTURE_3D );
 		}
 		if ( glConfig.cubeMapAvailable ) {
-			qglDisable( GL_TEXTURE_CUBE_MAP_EXT );
+			qglDisable( GL_TEXTURE_CUBE_MAP );
 		}
 	}
    #endif
@@ -516,8 +517,9 @@ void RB_ShowImages( void ) {
 
 	RB_SetGL2D();
 
-	//qglClearColor( 0.2, 0.2, 0.2, 1 );
-	//qglClear( GL_COLOR_BUFFER_BIT );
+	//HunoPPC 2022
+    qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    // Clear The Screen And The Depth Buffer
+    qglLoadIdentity();                                    // Reset The matrix
 
 	qglFinish();
 

@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -101,6 +102,18 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 		return 4;			// not sure
 	case GL_COMPRESSED_RGBA_ARB:
 		return 8;			// not sure
+    case  GL_DEPTH_COMPONENT24: //HunoPPC 2022
+        return 24;
+    case GL_DEPTH24_STENCIL8: //HunoPPC 2022
+        return 32;
+    case GL_RGBA: //HunoPPC 2022
+        return 32;
+    case GL_BGRA: //HunoPPC 2022
+        return 32;
+    case GL_RGB: //HunoPPC 2022
+        return 24;
+    case GL_BGR: //HunoPPC 2022
+        return 24;
 #endif
 	default:
 #if !defined(EGL_WRAP_GL_ES)
@@ -892,7 +905,6 @@ void idImage::Generate3DImage( const byte *pic, int width, int height, int picDe
 }
 #endif
 
-
 /*
 ====================
 GenerateCubeImage
@@ -925,6 +937,7 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 
 #if !defined(EGL_WRAP_GL_ES)
 	if ( ! glConfig.cubeMapAvailable ) {
+        common->Printf( "No CubeMap Available.\n" );
 		return;
 	}
 #endif
@@ -967,14 +980,12 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 	default:
 		common->FatalError( "R_CreateImage: bad texture filter" );
 	}
-
 	// upload the base level
 	// FIXME: support GL_COLOR_INDEX8_EXT?
 	for ( i = 0 ; i < 6 ; i++ ) {
-		qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT+i, 0, internalFormat, scaled_width, scaled_height, 0,
+		qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, 0, internalFormat, scaled_width, scaled_height, 0,
 			GL_RGBA, GL_UNSIGNED_BYTE, pic[i] );
 	}
-
 
 	// create and upload the mip map levels
 	int		miplevel;
@@ -989,7 +1000,7 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 		for ( i = 0 ; i < 6 ; i++ ) {
 			byte	*shrunken;
 
-			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT+i, miplevel, internalFormat,
+			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, miplevel, internalFormat,
 				scaled_width / 2, scaled_height / 2, 0,
 				GL_RGBA, GL_UNSIGNED_BYTE, shrunk[i] );
 
@@ -1007,7 +1018,6 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 		scaled_height >>= 1;
 		miplevel++;
 	}
-
 	// see if we messed anything up
 	GL_CheckErrors();
 }
@@ -1876,7 +1886,7 @@ void idImage::BindFragment() {
 	}
 #endif
 	else if (type == TT_CUBIC) {
-		glBindTexture(GL_TEXTURE_CUBE_MAP, texnum);
+		glBindTexture(GL_TEXTURE_CUBE_MAP_EXT, texnum);
 	}
 #if !defined(EGL_WRAP_GL_ES)
 	else if (type == TT_3D) {
@@ -2033,14 +2043,14 @@ void idImage::UploadScratch( const byte *data, int cols, int rows ) {
 
 			// upload the base level
 			for ( i = 0 ; i < 6 ; i++ ) {
-				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT+i, 0, GL_RGB8, cols, rows, 0,
+				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, 0, GL_RGB8, cols, rows, 0,
 					GL_RGBA, GL_UNSIGNED_BYTE, data + cols*rows*4*i );
 			}
 		} else {
 			// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 			// it and don't try and do a texture compression
 			for ( i = 0 ; i < 6 ; i++ ) {
-				qglTexSubImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT+i, 0, 0, 0, cols, rows,
+				qglTexSubImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, 0, 0, 0, cols, rows,
 					GL_RGBA, GL_UNSIGNED_BYTE, data + cols*rows*4*i );
 			}
 		}

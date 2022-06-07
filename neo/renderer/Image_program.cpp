@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -10,7 +11,7 @@ Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
+ 
 Doom 3 Source Code is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -330,7 +331,6 @@ static void R_ImageAdd( byte *data1, int width1, int height1, byte *data2, int w
 	}
 }
 
-
 // we build a canonical token form of the image program here
 static char parseBuffer[MAX_IMAGE_NAME];
 
@@ -369,6 +369,15 @@ If both pic and timestamps are NULL, it will just advance past it, which can be
 used to parse an image program from a text stream.
 ===================
 */
+//HunoPPC 2022
+//HunoPPC Parse Past Image for cameraCubeMap and CubeMap
+const char* HPPastImageProgram( idLexer &src ) {
+	parseBuffer[0] = 0;
+
+    R_ParseImageProgram_r( src, NULL, NULL, NULL, NULL, NULL );
+	return parseBuffer;
+}
+//
 static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *height,
 								  ID_TIME_T *timestamps, textureDepth_t *depth ) {
 	idToken		token;
@@ -575,6 +584,34 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 				(*pic)[i+1] =
 				(*pic)[i+2] = 255;
 			}
+		}
+
+		MatchAndAppendToken( src, ")" );
+		return true;
+	}
+   //HunoPPC 2022
+    if (!token.Icmp( "cameraCubeMap" )) {
+		MatchAndAppendToken( src, "(" );
+
+		const char* filename = HPPastImageProgram( src );
+		idStr::Append( parseBuffer, MAX_IMAGE_NAME, filename );
+
+		if (!R_LoadCubeImages( filename, CF_CAMERA, pic, width, &timestamp )){
+			return false;
+		}
+
+		MatchAndAppendToken( src, ")" );
+		return true;
+	}
+    //HunoPPC 2022
+	if (!token.Icmp( "cubeMap" )) {
+		MatchAndAppendToken( src, "(" );
+
+		const char* filename = HPPastImageProgram( src );
+		idStr::Append( parseBuffer, MAX_IMAGE_NAME, filename );
+
+		if (!R_LoadCubeImages( filename, CF_CAMERA, pic, width, &timestamp )){
+			return false;
 		}
 
 		MatchAndAppendToken( src, ")" );

@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -499,6 +500,7 @@ IMAGEPROGRAM
 */
 
 void R_LoadImageProgram( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, textureDepth_t *depth = NULL );
+static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *height, ID_TIME_T *timestamps, textureDepth_t *depth );
 const char *R_ParsePastImageProgram( idLexer &src );
 
 #endif

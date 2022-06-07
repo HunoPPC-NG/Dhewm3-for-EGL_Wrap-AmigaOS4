@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -1244,19 +1245,29 @@ void R_DeformDrawSurf( drawSurf_t *drawSurf ) {
 		R_AutospriteDeform( drawSurf );
 		break;
 	case DFRM_TUBE:
+        #if defined(EGL_WRAP_GL_ES)
 		R_TubeDeform( drawSurf );
+        #endif
 		break;
 	case DFRM_FLARE:
+         #if defined(EGL_WRAP_GL_ES)
 		R_FlareDeform( drawSurf );
+        #endif
 		break;
 	case DFRM_EXPAND:
+         #if defined(EGL_WRAP_GL_ES)
 		R_ExpandDeform( drawSurf );
+        #endif
 		break;
 	case DFRM_MOVE:
+         #if defined(EGL_WRAP_GL_ES)
 		R_MoveDeform( drawSurf );
+        #endif
 		break;
 	case DFRM_TURB:
+         #if defined(EGL_WRAP_GL_ES)
 		R_TurbulentDeform( drawSurf );
+        #endif
 		break;
 	case DFRM_EYEBALL:
 		R_EyeballDeform( drawSurf );

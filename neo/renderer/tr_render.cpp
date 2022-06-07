@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -40,12 +41,17 @@ If you have questions concerning this license or the applicable additional terms
 //
 #endif
 
+#define OVERBRIGHT
+
 /*
 
   back end scene + lights rendering functions
 
 */
 
+#ifdef OVERBRIGHT
+				float RB_overbright = 1;
+#endif
 
 /*
 =================
@@ -734,6 +740,11 @@ static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteractio
 		|| ( ( din->specularColor[0] > 0 ||
 		din->specularColor[1] > 0 ||
 		din->specularColor[2] > 0 ) && din->specularImage != globalImages->blackImage ) ) {
+#ifdef OVERBRIGHT
+				din->diffuseColor[0] *= RB_overbright;
+	            din->diffuseColor[1] *= RB_overbright;
+	            din->diffuseColor[2] *= RB_overbright;
+#endif
 		DrawInteraction( din );
 	}
 }

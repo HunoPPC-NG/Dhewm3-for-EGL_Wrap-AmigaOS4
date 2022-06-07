@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
@@ -31,7 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../renderer/tr_local.h"
 
-//#define ACTIVATE_NEW_BUMP
 
 /*
 
@@ -324,17 +324,7 @@ static void RB_ARB_DrawThreeTextureInteraction(const drawInteraction_t *din)
 	// I just want alpha = Dot( texture0, texture1 )
 	GL_TexEnv(GL_COMBINE_ARB);
 
-    #ifdef ACTIVATE_NEW_BUMP
-    common->Printf( "Enter on new code on BumpMapping first init\n");
-    //Set up texture environment to do (tex0 dot tex1)*color
-
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_DOT3_RGB_ARB);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
-
-
-    #else
+    
 	qglTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_DOT3_RGBA_ARB);
 	qglTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
 	qglTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
@@ -342,7 +332,7 @@ static void RB_ARB_DrawThreeTextureInteraction(const drawInteraction_t *din)
 	qglTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB_ARB, GL_SRC_COLOR);
 	qglTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1);
 	qglTexEnvi(GL_TEXTURE_ENV, GL_ALPHA_SCALE, 1);
-    #endif
+    
 
 	// draw it
 	RB_DrawElementsWithCounters(tri);
@@ -378,32 +368,14 @@ static void RB_ARB_DrawThreeTextureInteraction(const drawInteraction_t *din)
 
 		if (din->vertexColor == SVC_INVERSE_MODULATE) {
 			GL_TexEnv(GL_COMBINE_ARB);
-            #ifdef ACTIVATE_NEW_BUMP
-            common->Printf( "Enter on new code on BumpMapping second init\n");
-            //Set up texture environment to do (tex0 dot tex1)*color
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_REPLACE);
-
-		glActiveTextureARB(GL_TEXTURE1_ARB);
-
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_DOT3_RGB_ARB);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
-
-		glActiveTextureARB(GL_TEXTURE0_ARB);
-
-
-
-            #else
+            
 			qglTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PRIMARY_COLOR_ARB);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB_ARB, GL_SRC_COLOR);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB_ARB, GL_ONE_MINUS_SRC_COLOR);
 			qglTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1);
-            #endif
+            
 		}
 	}
 

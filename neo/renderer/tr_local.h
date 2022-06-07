@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -684,9 +685,6 @@ typedef enum {
     #if defined(EGL_WRAP_GL_ES)
     BE_GLSL,
     #endif
-  //BE_NV10,
-  //BE_NV20,
-  //BE_R200,
 	BE_BAD
 } backEndName_t;
 

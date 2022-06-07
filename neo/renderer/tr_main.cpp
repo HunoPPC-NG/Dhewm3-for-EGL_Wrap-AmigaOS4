@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -42,6 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 
 
 //====================================================================
+//#define Z_HACK
 
 /*
 ======================
@@ -906,6 +908,9 @@ void R_SetupProjection( viewDef_t * viewDef ) {
 	float	xmin, xmax, ymin, ymax;
 	float	width, height;
 	float	zNear;
+	#ifdef Z_HACK
+	float   zFar;
+    #endif
 	float	jitterx, jittery;
 	static	idRandom random;
 
@@ -922,10 +927,18 @@ void R_SetupProjection( viewDef_t * viewDef ) {
 	//
 	// set up projection matrix
 	//
+#ifdef Z_HACK
+	zNear = 8;
+#else
 	zNear	= r_znear.GetFloat();
+#endif
 	if ( viewDef->renderView.cramZNear ) {
 		zNear *= 0.25;
 	}
+	
+	#ifdef Z_HACK
+	zFar = 4000;
+    #endif
 
 	ymax = zNear * tan( viewDef->renderView.fov_y * idMath::PI / 360.0f );
 	ymin = -ymax;
@@ -958,9 +971,13 @@ void R_SetupProjection( viewDef_t * viewDef ) {
 	// rasterize right at the wraparound point
 	viewDef->projectionMatrix[2] = 0;
 	viewDef->projectionMatrix[6] = 0;
+	#ifdef Z_HACK
+	viewDef->projectionMatrix[10] = (-zFar-zNear)/(zFar-zNear);//-0.999f;
+	viewDef->projectionMatrix[14] = -2.0f*zFar*zNear/(zFar-zNear);
+	#else
 	viewDef->projectionMatrix[10] = -0.999f;
 	viewDef->projectionMatrix[14] = -2.0f * zNear;
-
+    #endif
 	viewDef->projectionMatrix[3] = 0;
 	viewDef->projectionMatrix[7] = 0;
 	viewDef->projectionMatrix[11] = -1;
