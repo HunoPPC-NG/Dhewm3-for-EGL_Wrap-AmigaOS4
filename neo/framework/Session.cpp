@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -3114,7 +3115,7 @@ void idSessionLocal::ReadCDKey( void ) {
 	}
 
 	xpkey_state = CDKEY_UNKNOWN;
-//HunoP¨PC 2018
+//HunoPPC 2018
 	//filename = "../" BASE_GAMEDIR "/" XPKEY_FILE;
 #if defined(__amigaos4__)
    filename = "" XPKEY_FILE;

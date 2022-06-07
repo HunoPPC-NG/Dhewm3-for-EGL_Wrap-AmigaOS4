@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -78,8 +79,8 @@ struct version_s {
 
 idCVar com_version( "si_version", version.string, CVAR_SYSTEM|CVAR_ROM|CVAR_SERVERINFO, "engine version" );
 idCVar com_skipRenderer( "com_skipRenderer", "0", CVAR_BOOL|CVAR_SYSTEM, "skip the renderer completely" );
-idCVar com_machineSpec( "com_machineSpec", "-1", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_SYSTEM, "hardware classification, -1 = not detected, 0 = low quality, 1 = medium quality, 2 = high quality, 3 = ultra quality" );
-idCVar com_purgeAll( "com_purgeAll", "0", CVAR_BOOL | CVAR_ARCHIVE | CVAR_SYSTEM, "purge everything between level loads" );
+idCVar com_machineSpec( "com_machineSpec", "2", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_SYSTEM, "hardware classification, -1 = not detected, 0 = low quality, 1 = medium quality, 2 = high quality, 3 = ultra quality" );
+idCVar com_purgeAll( "com_purgeAll", "1", CVAR_BOOL | CVAR_ARCHIVE | CVAR_SYSTEM, "purge everything between level loads" );//Enabled by HunoPPC 2022
 idCVar com_memoryMarker( "com_memoryMarker", "-1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_INIT, "used as a marker for memory stats" );
 idCVar com_preciseTic( "com_preciseTic", "1", CVAR_BOOL|CVAR_SYSTEM, "run one game tick every async thread update" );
 idCVar com_asyncInput( "com_asyncInput", "0", CVAR_BOOL|CVAR_SYSTEM, "sample input from the async thread" );
@@ -1154,7 +1155,8 @@ static void Com_ScriptDebugger_f( const idCmdArgs &args ) {
             //com_enableDebuggerServer.SetBool( true );
 
 		//start debugger client.
-		DebuggerClientLaunch();
+		//Disabled by HunoPPC 2022
+		//DebuggerClientLaunch();
 
 	}
 }
@@ -1491,8 +1493,9 @@ void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
 		cvarSystem->SetCVarInteger( "image_useNormalCompression", 2, CVAR_ARCHIVE );
 		cvarSystem->SetCVarInteger( "r_multiSamples", 0, CVAR_ARCHIVE );
 	}
-
-	cvarSystem->SetCVarBool( "com_purgeAll", false, CVAR_ARCHIVE );
+//Purge All Enabled by HunoPPC 2022
+	//cvarSystem->SetCVarBool( "com_purgeAll", false, CVAR_ARCHIVE );
+	cvarSystem->SetCVarBool( "com_purgeAll", true, CVAR_ARCHIVE );
 	cvarSystem->SetCVarBool( "r_forceLoadImages", false, CVAR_ARCHIVE );
 
 	cvarSystem->SetCVarBool( "g_decals", true, CVAR_ARCHIVE );
@@ -2897,8 +2900,7 @@ idCommonLocal::Init
 =================
 */
 void idCommonLocal::Init( int argc, char **argv ) {
-
-    common->Printf("Enter on game Init HunoPPC\n");
+	
 // in case UINTPTR_MAX isn't defined (or wrong), do a runtime check at startup
 	if ( D3_SIZEOFPTR != sizeof(void*) ) {
 		Sys_Error( "Something went wrong in your build: CMake assumed that sizeof(void*) == %d but in reality it's %d!\n",
