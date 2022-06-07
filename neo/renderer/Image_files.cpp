@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -33,8 +34,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../renderer/Image.h"
 
-//#include <jpeglib.h>
-//#include <jerror.h>
 #if defined(__amigaos4__)
 extern "C" {
 #include "../sys/amigaos4/jpeg-8c/jpeglib.h"
@@ -43,6 +42,10 @@ extern "C" {
 #include <jpeglib.h>
 #include <jerror.h>
 #endif
+
+//HunoPPC 2022
+//Disabled 
+//#define SidesIsPNG
 
 /*
 
@@ -138,6 +141,7 @@ void R_WritePalTGA( const char *filename, const byte *data, const byte *palette,
 static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
 static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
 static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
+static void LoadPNG( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );//HunoPPC 2022
 
 
 /*
@@ -936,6 +940,273 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
 //===================================================================
 
 /*
+=========================================================
+
+PNG LOADING HunoPPC 2022
+
+=========================================================
+*/
+
+extern "C"
+{
+#include <string.h>
+#include <png.h>
+
+
+	static void png_Error( png_structp pngPtr, png_const_charp msg )
+	{
+		common->FatalError( "%s", msg );
+	}
+
+	static void png_Warning( png_structp pngPtr, png_const_charp msg )
+	{
+		common->Warning( "%s", msg );
+	}
+
+	static void	png_ReadData( png_structp pngPtr, png_bytep data, png_size_t length )
+	{
+#if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR <= 4
+		memcpy( data, ( byte* )pngPtr->io_ptr, length );
+
+		pngPtr->io_ptr = ( ( byte* ) pngPtr->io_ptr ) + length;
+#else
+		// There is a get_io_ptr but not a set_io_ptr.. Therefore we need some tmp storage here.
+		byte** ioptr = ( byte** )png_get_io_ptr( pngPtr );
+		memcpy( data, *ioptr, length );
+		*ioptr += length;
+#endif
+	}
+
+}
+
+/*
+=============
+LoadPNG HunoPPC 2022
+=============
+*/
+void LoadPNG( const char* filename, unsigned char** pic, int* width, int* height, ID_TIME_T* timestamp )
+{
+	byte*	fbuffer;
+#if PNG_LIBPNG_VER_MAJOR > 1 || PNG_LIBPNG_VER_MINOR > 4
+	byte*   readptr;
+#endif
+
+	if( !pic )
+	{
+		fileSystem->ReadFile( filename, NULL, timestamp );
+		return;	// just getting timestamp
+	}
+
+	*pic = NULL;
+
+	//
+	// load the file
+	//
+	int fileSize = fileSystem->ReadFile( filename, ( void** )&fbuffer, timestamp );
+	if( !fbuffer )
+	{
+		return;
+	}
+
+	// create png_struct with the custom error handlers
+	png_structp pngPtr = png_create_read_struct( PNG_LIBPNG_VER_STRING, ( png_voidp ) NULL, png_Error, png_Warning );
+	if( !pngPtr )
+	{
+		common->Error( "LoadPNG( %s ): png_create_read_struct failed", filename );
+	}
+
+	// allocate the memory for image information
+	png_infop infoPtr = png_create_info_struct( pngPtr );
+	if( !infoPtr )
+	{
+		common->Error( "LoadPNG( %s ): png_create_info_struct failed", filename );
+	}
+
+#if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR <= 4
+	png_set_read_fn( pngPtr, fbuffer, png_ReadData );
+#else
+	readptr = fbuffer;
+	png_set_read_fn( pngPtr, &readptr, png_ReadData );
+#endif
+
+	png_set_sig_bytes( pngPtr, 0 );
+
+	png_read_info( pngPtr, infoPtr );
+
+	png_uint_32 pngWidth, pngHeight;
+	int bitDepth, colorType, interlaceType;
+	png_get_IHDR( pngPtr, infoPtr, &pngWidth, &pngHeight, &bitDepth, &colorType, &interlaceType, NULL, NULL );
+
+	// 16 bit -> 8 bit
+	png_set_strip_16( pngPtr );
+
+	// 1, 2, 4 bit -> 8 bit
+	if( bitDepth < 8 )
+	{
+		png_set_packing( pngPtr );
+	}
+
+#if 1
+	if( colorType & PNG_COLOR_MASK_PALETTE )
+	{
+		png_set_expand( pngPtr );
+	}
+
+	if( !( colorType & PNG_COLOR_MASK_COLOR ) )
+	{
+		png_set_gray_to_rgb( pngPtr );
+	}
+
+#else
+	if( colorType == PNG_COLOR_TYPE_PALETTE )
+	{
+		png_set_palette_to_rgb( pngPtr );
+	}
+
+	if( colorType == PNG_COLOR_TYPE_GRAY && bitDepth < 8 )
+	{
+		png_set_expand_gray_1_2_4_to_8( pngPtr );
+	}
+#endif
+
+	// set paletted or RGB images with transparency to full alpha so we get RGBA
+	if( png_get_valid( pngPtr, infoPtr, PNG_INFO_tRNS ) )
+	{
+		png_set_tRNS_to_alpha( pngPtr );
+	}
+
+	// make sure every pixel has an alpha value
+	if( !( colorType & PNG_COLOR_MASK_ALPHA ) )
+	{
+		png_set_filler( pngPtr, 255, PNG_FILLER_AFTER );
+	}
+
+	png_read_update_info( pngPtr, infoPtr );
+
+	byte* out = ( byte* )R_StaticAlloc( pngWidth * pngHeight * 4, TAG_IMAGE );
+
+	*pic = out;
+	*width = pngWidth;
+	*height = pngHeight;
+
+	png_uint_32 rowBytes = png_get_rowbytes( pngPtr, infoPtr );
+
+	png_bytep* rowPointers = ( png_bytep* ) R_StaticAlloc( sizeof( png_bytep ) * pngHeight );
+	for( png_uint_32 row = 0; row < pngHeight; row++ )
+	{
+		rowPointers[row] = ( png_bytep )( out + ( row * pngWidth * 4 ) );
+	}
+
+	png_read_image( pngPtr, rowPointers );
+
+	png_read_end( pngPtr, infoPtr );
+
+	png_destroy_read_struct( &pngPtr, &infoPtr, NULL );
+
+	R_StaticFree( rowPointers );
+	Mem_Free( fbuffer );
+
+	// RB: PNG needs to be flipped to match the .tga behavior
+	// edit: this is wrong and flips images UV mapped in Blender 2.83
+	//R_VerticalFlip( *pic, *width, *height );
+}
+
+
+extern "C"
+{
+
+	static int png_compressedSize = 0;
+	static void	png_WriteData( png_structp pngPtr, png_bytep data, png_size_t length )
+	{
+#if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR <= 4
+		memcpy( ( byte* )pngPtr->io_ptr, data, length );
+		pngPtr->io_ptr = ( ( byte* ) pngPtr->io_ptr ) + length;
+#else
+		byte** ioptr = ( byte** )png_get_io_ptr( pngPtr );
+		memcpy( *ioptr, data, length );
+		*ioptr += length;
+#endif
+		png_compressedSize += length;
+	}
+
+	static void	png_FlushData( png_structp pngPtr ) { }
+
+}
+
+/*
+================
+R_WritePNG HunoPPC 2022
+================
+*/
+void R_WritePNG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, bool flipVertical, const char* basePath )
+{
+	png_structp pngPtr = png_create_write_struct( PNG_LIBPNG_VER_STRING, NULL, png_Error, png_Warning );
+	if( !pngPtr )
+	{
+		common->Error( "R_WritePNG( %s ): png_create_write_struct failed", filename );
+	}
+
+	png_infop infoPtr = png_create_info_struct( pngPtr );
+	if( !infoPtr )
+	{
+		common->Error( "R_WritePNG( %s ): png_create_info_struct failed", filename );
+	}
+
+	png_compressedSize = 0;
+	byte* buffer = ( byte* ) Mem_Alloc( width * height * bytesPerPixel, TAG_TEMP );
+#if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR <= 4
+	png_set_write_fn( pngPtr, buffer, png_WriteData, png_FlushData );
+#else
+	byte* ioptr  = buffer;
+	png_set_write_fn( pngPtr, &ioptr, png_WriteData, png_FlushData );
+#endif
+
+	if( bytesPerPixel == 4 )
+	{
+		png_set_IHDR( pngPtr, infoPtr, width, height, 8, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT );
+	}
+	else if( bytesPerPixel == 3 )
+	{
+		png_set_IHDR( pngPtr, infoPtr, width, height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT );
+	}
+	else
+	{
+		common->Error( "R_WritePNG( %s ): bytesPerPixel = %i not supported", filename, bytesPerPixel );
+	}
+
+	// write header
+	png_write_info( pngPtr, infoPtr );
+
+	png_bytep* rowPointers = ( png_bytep* ) Mem_Alloc( sizeof( png_bytep ) * height, TAG_TEMP );
+
+	if( !flipVertical )
+	{
+		for( int row = 0, flippedRow = height - 1; row < height; row++, flippedRow-- )
+		{
+			rowPointers[flippedRow] = ( png_bytep )( data + ( row * width * bytesPerPixel ) );
+		}
+	}
+	else
+	{
+		for( int row = 0; row < height; row++ )
+		{
+			rowPointers[row] = ( png_bytep )( data + ( row * width * bytesPerPixel ) );
+		}
+	}
+
+	png_write_image( pngPtr, rowPointers );
+	png_write_end( pngPtr, infoPtr );
+
+	png_destroy_write_struct( &pngPtr, &infoPtr );
+
+	Mem_Free( rowPointers );
+
+	fileSystem->WriteFile( filename, buffer, png_compressedSize, basePath );
+
+	Mem_Free( buffer );
+}
+
+/*
 =================
 R_LoadImage
 
@@ -998,6 +1269,8 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 		LoadBMP( name.c_str(), pic, width, height, timestamp );
 	} else if ( ext == "jpg" ) {
 		LoadJPG( name.c_str(), pic, width, height, timestamp );
+	} else if ( ext == "png" ) {
+		LoadPNG( name.c_str(), pic, width, height, timestamp );//HunoPPC 2022
 	}
 
 	if ( ( width && *width < 1 ) || ( height && *height < 1 ) ) {
@@ -1040,6 +1313,44 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 	}
 }
 
+//HunoPPC 2022
+static const char* axisSides[] = {
+	"_ny.tga",
+	"_py.tga",
+	"_pz.tga",
+	"_nz.tga",
+	"_nx.tga",
+	"_px.tga",
+};
+//HunoPPC 2022
+static const char* cameraSides[] = {
+	"_right.tga",
+	"_left.tga",
+	"_up.tga",
+	"_down.tga",
+	"_back.tga",
+	"_forward.tga"
+};
+
+//HunoPPC 2022
+static const char* axisSidesPNG[] = {
+	"_ny.png",
+	"_py.png",
+	"_pz.png",
+	"_nz.png",
+	"_nx.png",
+	"_px.png",
+};
+//HunoPPC 2022
+static const char* cameraSidesPNG[] = {
+	"_right.png",
+	"_left.png",
+	"_up.png",
+	"_down.png",
+	"_back.png",
+	"_forward.png"
+};
+
 
 /*
 =======================
@@ -1050,19 +1361,17 @@ Loads six files with proper extensions
 */
 bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6], int *outSize, ID_TIME_T *timestamp ) {
 	int		i, j;
-	const char	*cameraSides[6] =  { "_forward.tga", "_back.tga", "_left.tga", "_right.tga",
-		"_up.tga", "_down.tga" };
-	const char	*axisSides[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga",
-		"_pz.tga", "_nz.tga" };
-	const char	**sides;
+
+    //HunoPPC 2022
+    assert( extensions == CF_CAMERA || extensions == CF_NATIVE );
+	#ifdef SidesIsPNG
+	const char	**sides = (extensions == CF_CAMERA) ? cameraSidesPNG : axisSidesPNG; //HunoPPC 2022
+	#else
+    const char	**sides = (extensions == CF_CAMERA) ? cameraSides : axisSides;
+    #endif
+    //
 	char	fullName[MAX_IMAGE_NAME];
 	int		width, height, size = 0;
-
-	if ( extensions == CF_CAMERA ) {
-		sides = cameraSides;
-	} else {
-		sides = axisSides;
-	}
 
 	// FIXME: precompressed cube map files
 	if ( pics ) {
@@ -1100,27 +1409,53 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 		if ( pics && extensions == CF_CAMERA ) {
 			// convert from "camera" images to native cube map images
 			switch( i ) {
-			case 0:	// forward
-				R_RotatePic( pics[i], width);
-				break;
-			case 1:	// back
-				R_RotatePic( pics[i], width);
-				R_HorizontalFlip( pics[i], width, height );
-				R_VerticalFlip( pics[i], width, height );
-				break;
-			case 2:	// left
-				R_VerticalFlip( pics[i], width, height );
-				break;
-			case 3:	// right
-				R_HorizontalFlip( pics[i], width, height );
-				break;
-			case 4:	// up
-				R_RotatePic( pics[i], width);
-				break;
-			case 5: // down
-				R_RotatePic( pics[i], width);
-				break;
+                //HunoPPC 2022
+			case 0:	// right
+					R_HorizontalFlip( pics[i], size, size );
+					break;
+				case 1:	// left
+					R_HorizontalFlip( pics[i], size, size );
+					break;
+				case 2:	// up
+					R_VerticalFlip( pics[i], size, size );
+					break;
+				case 3:	// down
+					R_VerticalFlip( pics[i], size, size );
+					break;
+				case 4:	// forward
+					R_HorizontalFlip( pics[i], size, size );
+					break;
+				case 5: // back
+					R_HorizontalFlip( pics[i], size, size );
+					break;
+				}
 			}
+			else {
+				switch (i) {
+                    //HunoPPC 2022
+				case 0:	// right
+					break;
+				case 1:	// left
+					R_VerticalFlip( pics[i], size, size );
+					R_HorizontalFlip( pics[i], size, size );
+					break;
+				case 2:	// up
+					R_RotatePic( pics[i], size );
+					R_VerticalFlip( pics[i], size, size );
+					break;
+				case 3:	// down
+					R_HorizontalFlip( pics[i], size, size );
+					R_RotatePic( pics[i], size );
+					break;
+				case 4:	// forward
+					R_RotatePic( pics[i], size );
+					R_VerticalFlip( pics[i], size, size );
+					break;
+				case 5: // back
+					R_RotatePic( pics[i], size );
+					R_HorizontalFlip( pics[i], size, size );
+					break;
+				}
 		}
 	}
 
