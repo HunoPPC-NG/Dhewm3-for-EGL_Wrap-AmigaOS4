@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -40,6 +41,12 @@ If you have questions concerning this license or the applicable additional terms
 #include "../framework/FileSystem.h"
 #include "../sys/posix/posix_public.h"
 #include "../sys/sys_local.h"
+
+static const char * __attribute__((used)) stackcookie = "$STACK: 900000";
+#ifdef __amigaos4__
+const char *version_tag = "$VER: Dhewm3 1.5.2rc1 Betatest AOS4 (05.06.2022) port and bonus code by NOUVEL 'HunoPPC' Hugues";
+static const char __attribute((used)) amiga_ver[] = "$VER: Dhewm3 1.5.2rc1 Betatest AOS4 (05.06.2022)\0";
+#endif
 
 #include <locale.h>
 
