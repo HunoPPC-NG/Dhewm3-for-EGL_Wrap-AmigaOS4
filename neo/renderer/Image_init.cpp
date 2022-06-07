@@ -999,7 +999,7 @@ static const filterName_t textureFilters[] = {
 			texEnum = GL_TEXTURE_3D;
 			break;
 		case TT_CUBIC:
-			texEnum = GL_TEXTURE_CUBE_MAP;
+			texEnum = GL_TEXTURE_CUBE_MAP_EXT;
 			break;
 		}
 
