@@ -1083,7 +1083,7 @@ void LoadPNG( const char* filename, unsigned char** pic, int* width, int* height
 
 	png_read_update_info( pngPtr, infoPtr );
 
-	byte* out = ( byte* )R_StaticAlloc( pngWidth * pngHeight * 4, TAG_IMAGE );
+	byte* out = ( byte* )R_StaticAlloc( pngWidth * pngHeight * 4);
 
 	*pic = out;
 	*width = pngWidth;
@@ -1153,7 +1153,7 @@ void R_WritePNG( const char* filename, const byte* data, int bytesPerPixel, int 
 	}
 
 	png_compressedSize = 0;
-	byte* buffer = ( byte* ) Mem_Alloc( width * height * bytesPerPixel, TAG_TEMP );
+	byte* buffer = ( byte* ) Mem_Alloc( width * height * bytesPerPixel);
 #if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR <= 4
 	png_set_write_fn( pngPtr, buffer, png_WriteData, png_FlushData );
 #else
@@ -1177,7 +1177,7 @@ void R_WritePNG( const char* filename, const byte* data, int bytesPerPixel, int 
 	// write header
 	png_write_info( pngPtr, infoPtr );
 
-	png_bytep* rowPointers = ( png_bytep* ) Mem_Alloc( sizeof( png_bytep ) * height, TAG_TEMP );
+	png_bytep* rowPointers = ( png_bytep* ) Mem_Alloc( sizeof( png_bytep ) * height);
 
 	if( !flipVertical )
 	{
