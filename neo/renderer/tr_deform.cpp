@@ -366,14 +366,14 @@ int	R_WindingFromTriangles( const srfTriangles_t *tri, glIndex_t indexes[MAX_TRI
 
 /*
 =====================
-R_FlareDeform
+R_FlareDeformFast
 
 =====================
 */
-/*
-static void R_FlareDeform( drawSurf_t *surf ) {
+//HunoPPC 2022 Fixed
+static void R_FlareDeformFast( drawSurf_t *surf ) {
 	const srfTriangles_t *tri;
-	srfTriangles_t		*newTri;
+	srfTriangles_t		*newTriHN;
 	idPlane	plane;
 	float	dot;
 	idVec3	localViewer;
@@ -382,161 +382,22 @@ static void R_FlareDeform( drawSurf_t *surf ) {
 	tri = surf->geo;
 
 	if ( tri->numVerts != 4 || tri->numIndexes != 6 ) {
-		//FIXME: temp hack for flares on tripleted models
-		common->Warning( "R_FlareDeform: not a single quad" );
+		common->DPrintf( "R_FlareDeformFast: not a single quad\n" );
 		return;
 	}
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = (srfTriangles_t *)R_ClearedFrameAlloc( sizeof( *newTri ) );
-	newTri->numVerts = 4;
-	newTri->numIndexes = 2*3;
-	newTri->indexes = (glIndex_t *)R_FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) );
+	newTriHN = (srfTriangles_t *)R_ClearedFrameAlloc( sizeof( *newTriHN ) );
+	newTriHN->numVerts = 16;
+	newTriHN->numIndexes = 18*3;
+	newTriHN->indexes = (glIndex_t *)R_FrameAlloc( newTriHN->numIndexes * sizeof( newTriHN->indexes[0] ) );
 
-	idDrawVert *ac = (idDrawVert *)_alloca16( newTri->numVerts * sizeof( idDrawVert ) );
-
-	// find the plane
-	plane.FromPoints( tri->verts[tri->indexes[0]].xyz, tri->verts[tri->indexes[1]].xyz, tri->verts[tri->indexes[2]].xyz );
-
-	// if viewer is behind the plane, draw nothing
-	R_GlobalPointToLocal( surf->space->modelMatrix, tr.viewDef->renderView.vieworg, localViewer );
-	float distFromPlane = localViewer * plane.Normal() + plane[3];
-	if ( distFromPlane <= 0 ) {
-		newTri->numIndexes = 0;
-		surf->geo = newTri;
-		return;
-	}
-
-	idVec3	center;
-	center = tri->verts[0].xyz;
-	for ( j = 1 ; j < tri->numVerts ; j++ ) {
-		center += tri->verts[j].xyz;
-	}
-	center *= 1.0/tri->numVerts;
-
-	idVec3	dir = localViewer - center;
-	dir.Normalize();
-
-	dot = dir * plane.Normal();
-
-	// set vertex colors based on plane angle
-	int	color = (int)(dot * 8 * 256);
-	if ( color > 255 ) {
-		color = 255;
-	}
-	for ( j = 0 ; j < newTri->numVerts ; j++ ) {
-		ac[j].color[0] =
-		ac[j].color[1] =
-		ac[j].color[2] = color;
-		ac[j].color[3] = 255;
-	}
-
-	float	spread = surf->shaderRegisters[ surf->material->GetDeformRegister(0) ] * r_flareSize.GetFloat();
-	idVec3	edgeDir[4][3];
-	glIndex_t		indexes[MAX_TRI_WINDING_INDEXES];
-	int		numIndexes = R_WindingFromTriangles( tri, indexes );
-
-	surf->material = declManager->FindMaterial( "textures/smf/anamorphicFlare" );
-
-	// only deal with quads
-	if ( numIndexes != 4 ) {
-		return;
-	}
-
-	// compute centroid
-	idVec3 centroid, toeye, forward, up, left;
-	centroid.Set( 0, 0, 0 );
-	for ( int i = 0; i < 4; i++ ) {
-		centroid += tri->verts[ indexes[i] ].xyz;
-	}
-	centroid /= 4;
-
-	// compute basis vectors
-	up.Set( 0, 0, 1 );
-
-	toeye = centroid - localViewer;
-	toeye.Normalize();
-	left = toeye.Cross( up );
-	up = left.Cross( toeye );
-
-	left = left * 40 * 6;
-	up = up * 40;
-
-	// compute flares
-	struct flare_t {
-		float	angle;
-		float	length;
-	};
-
-	static flare_t flares[] = {
-		{ 0, 100 },
-		{ 90, 100 }
-	};
-
-	for ( int i = 0; i < 4; i++ ) {
-		memset( ac + i, 0, sizeof( ac[i] ) );
-	}
-
-	ac[0].xyz = centroid - left;
-	ac[0].st[0] = 0; ac[0].st[1] = 0;
-
-	ac[1].xyz = centroid + up;
-	ac[1].st[0] = 1; ac[1].st[1] = 0;
-
-	ac[2].xyz = centroid + left;
-	ac[2].st[0] = 1; ac[2].st[1] = 1;
-
-	ac[3].xyz = centroid - up;
-	ac[3].st[0] = 0; ac[3].st[1] = 1;
-
-	// setup colors
-	for ( j = 0 ; j < newTri->numVerts ; j++ ) {
-		ac[j].color[0] =
-		ac[j].color[1] =
-		ac[j].color[2] = 255;
-		ac[j].color[3] = 255;
-	}
-
-	// setup indexes
-	static glIndex_t	triIndexes[2*3] = {
-		0,1,2,  0,2,3
-	};
-
-	memcpy( newTri->indexes, triIndexes, sizeof( triIndexes ) );
-
-	R_FinishDeform( surf, newTri, ac );
-}
-*/
-
-static void R_FlareDeform( drawSurf_t *surf ) {
-	const srfTriangles_t *tri;
-	srfTriangles_t		*newTri;
-	idPlane	plane;
-	float	dot;
-	idVec3	localViewer;
-	int		j;
-
-	tri = surf->geo;
-
-	if ( tri->numVerts != 4 || tri->numIndexes != 6 ) {
-		//FIXME: temp hack for flares on tripleted models
-		common->DPrintf( "R_FlareDeform: not a single quad\n" );
-		return;
-	}
-
-	// this srfTriangles_t and all its indexes and caches are in frame
-	// memory, and will be automatically disposed of
-	newTri = (srfTriangles_t *)R_ClearedFrameAlloc( sizeof( *newTri ) );
-	newTri->numVerts = 16;
-	newTri->numIndexes = 18*3;
-	newTri->indexes = (glIndex_t *)R_FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) );
-
-	idDrawVert *ac = (idDrawVert *)_alloca16( newTri->numVerts * sizeof( idDrawVert ) );
+	idDrawVert *ac = (idDrawVert *)_alloca16( newTriHN->numVerts * sizeof( idDrawVert ) );
 
 	// find the plane
 	if (!plane.FromPoints( tri->verts[tri->indexes[0]].xyz, tri->verts[tri->indexes[1]].xyz, tri->verts[tri->indexes[2]].xyz )) {
-		common->Warning( "R_FlareDeform: plane.FromPoints failed" );
+		common->Warning( "R_FlareDeformFast: plane.FromPoints failed" );
 		return;
 	}
 
@@ -544,8 +405,8 @@ static void R_FlareDeform( drawSurf_t *surf ) {
 	R_GlobalPointToLocal( surf->space->modelMatrix, tr.viewDef->renderView.vieworg, localViewer );
 	float distFromPlane = localViewer * plane.Normal() + plane[3];
 	if ( distFromPlane <= 0 ) {
-		newTri->numIndexes = 0;
-		surf->geo = newTri;
+		newTriHN->numIndexes = 0;
+		surf->geo = newTriHN;
 		return;
 	}
 
@@ -566,10 +427,10 @@ static void R_FlareDeform( drawSurf_t *surf ) {
 	if ( color > 255 ) {
 		color = 255;
 	}
-	for ( j = 0 ; j < newTri->numVerts ; j++ ) {
+	for ( j = 0 ; j < newTriHN->numVerts ; j++ ) {
 		ac[j].color[0] =
-		ac[j].color[1] =
-		ac[j].color[2] = color;
+		    ac[j].color[1] =
+		        ac[j].color[2] = color;
 		ac[j].color[3] = 255;
 	}
 
@@ -588,7 +449,7 @@ static void R_FlareDeform( drawSurf_t *surf ) {
 	for ( i = 0 ; i < 4 ; i++ ) {
 		ac[i].xyz = tri->verts[ indexes[i] ].xyz;
 		ac[i].st[0] =
-		ac[i].st[1] = 0.5;
+		    ac[i].st[1] = 0.5;
 
 		idVec3	toEye = tri->verts[ indexes[i] ].xyz - localViewer;
 		toEye.Normalize();
@@ -666,7 +527,6 @@ static void R_FlareDeform( drawSurf_t *surf ) {
 
 		float ang = dir * plane.Normal();
 
-//		ac[i].xyz -= dir * spread * 2;
 		float newLen = -( distFromPlane / ang );
 
 		if ( newLen > 0 && newLen < len ) {
@@ -677,23 +537,16 @@ static void R_FlareDeform( drawSurf_t *surf ) {
 		ac[i].st[1] = 0.5;
 	}
 
-#if 1
-	static glIndex_t	triIndexes[18*3] = {
-		0,4,5,  0,5,6, 0,6,7, 0,7,1, 1,7,8, 1,8,9,
-		15,4,0, 15,0,3, 3,0,1, 3,1,2, 2,1,9, 2,9,10,
-		14,15,3, 14,3,13, 13,3,2, 13,2,12, 12,2,11, 11,2,10
-	};
-#else
-	newTri->numIndexes = 12;
+	newTriHN->numIndexes = 12;
 	static glIndex_t triIndexes[4*3] = {
 		0,1,2, 0,2,3, 0,4,5,0,5,6
 	};
-#endif
 
-	memcpy( newTri->indexes, triIndexes, sizeof( triIndexes ) );
+	memcpy( newTriHN->indexes, triIndexes, sizeof( triIndexes ) );
 
-	R_FinishDeform( surf, newTri, ac );
+	R_FinishDeform( surf, newTriHN, ac );
 }
+
 
 
 
@@ -1245,29 +1098,19 @@ void R_DeformDrawSurf( drawSurf_t *drawSurf ) {
 		R_AutospriteDeform( drawSurf );
 		break;
 	case DFRM_TUBE:
-        #if defined(EGL_WRAP_GL_ES)
 		R_TubeDeform( drawSurf );
-        #endif
 		break;
 	case DFRM_FLARE:
-         #if defined(EGL_WRAP_GL_ES)
-		R_FlareDeform( drawSurf );
-        #endif
+		R_FlareDeformFast( drawSurf );
 		break;
 	case DFRM_EXPAND:
-         #if defined(EGL_WRAP_GL_ES)
 		R_ExpandDeform( drawSurf );
-        #endif
 		break;
 	case DFRM_MOVE:
-         #if defined(EGL_WRAP_GL_ES)
 		R_MoveDeform( drawSurf );
-        #endif
 		break;
 	case DFRM_TURB:
-         #if defined(EGL_WRAP_GL_ES)
 		R_TurbulentDeform( drawSurf );
-        #endif
 		break;
 	case DFRM_EYEBALL:
 		R_EyeballDeform( drawSurf );

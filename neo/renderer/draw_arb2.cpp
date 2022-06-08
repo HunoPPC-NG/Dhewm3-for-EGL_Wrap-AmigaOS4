@@ -328,7 +328,7 @@ typedef struct {
 	char			name[64];
 } progDef_t;
 
-static	const int	MAX_GLPROGS = 200;
+static	const int	MAX_GLPROGS = 256;
 
 // a single file can have both a vertex program and a fragment program
 static progDef_t	progs[MAX_GLPROGS] = {
