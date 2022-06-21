@@ -1,6 +1,9 @@
 # ABOUT
 
-_dhewm 3_ is a _Doom 3_ GPL source port, know to work on at least Windows, Linux, Mac OS X and FreeBSD.
+_dhewm 3_ is a _Doom 3_ GPL source port, know to work on at least Windows, Linux, Mac OS X, FreeBSD and now! AmigaOS4.
+
+Copyright (C) 2018-2022 Hugues Nouvel
+_CODE NAME_ _dhewm 3_ AOS4 "ALWAYS ULTRA"
 
 The goal of _dhewm 3_ is bring _DOOM 3_ with the help of SDL to all suitable
 platforms.
@@ -29,9 +32,41 @@ Doom3 Original source code for arb Driver : https://github.com/id-Software/DOOM-
 
 Gl4ES for Opengl renderer : https://github.com/ptitSeb/gl4es
 
+# RELEASES
+
+## Dhewm3 V1.5.2 release Named ALWAYS ULTRA AOS4(betatest) by HunoPPC (21.06.2022)
+
+- Added Joypad with EGLSDL v1.3 
+- Support multithreading in EGL_wrapper library for low CPU on DOOM3 now!
+- Support ARB2
+- Optimized sound support to relieve CPU resources
+- Support for the full Polish version of Doom3 (c) LEM
+- Gamma and Brightness are now applied in the shaders instead of by setting hardware gamma, can be disabled (so hardware gamma is used again) with r_gammaInShaders 0
+- s_alReverbGain CVar to reduce EFX reverb effect intensity
+- Fixes for looped sounds
+- Replaced most usages of strncpy() with something safer to prevent buffer overflows (remaining cases should be safe)
+- Support loading some mods known to need fs_game_base d3xp via Mods menu (currently, The Lost Mission and LibreCoop d3xp are supported)
+- Disable assertion in idSampleDecoderLocal::DecodeOGG() that triggered when starting a new Classic Doom3 game
+- Versions of compatible MODS (One individual executable per Module):
+  * LibreCoop
+  * The Lost Mission 
+  * Classic Doom3
+  * HardCorps
+  * Resurrection of Evil
+  * Rivensin
+  * Fitz Packerton
+  * Denton's Enhanced Doom3
+  > > See https://dhewm3.org/mods.html for more details
+- dhewm3 now supports the Doom3 Demo gamedata  
+- Restore "Carmack's Reverse" Z-Fail stencil shadows; use glStencilOpSeparate() if available
+- Scale menus, fullscreen videos and the PDA to 4:3 (with black bars left/right) on
+- Widescreen displays so they don't look stretched/distorted. Can be disabled with r_scaleMenusTo43 0.
+- Lags in starting to play a sound which for example caused the machinegun or plasmagun sounds to stutter have been eliminated
+- Looping .wav sounds with leadin now work
+- Added support of PNG images for additional MODS
 
 
-# CHANGES
+# CHANGES ON THIS VERSION
 
 Compared to the original _DOOM 3_, the changes of _dhewm 3_ worth mentioning are:
 
@@ -69,7 +104,7 @@ https://www.humblebundle.com/store/p/doom3_resofevil_storefront
 
 Required libraries are not part of the tree. These are:
 
-- AmigaOS 4.1 PowerPC
+- AmigaOS 4.1 Machine PowerPC
 - Warp3D NOVA from A-EON
 - OpenglES2 from A-EON
 - EGL_Wrap library from HunoPPC 
@@ -79,7 +114,7 @@ Required libraries are not part of the tree. These are:
 - libvorbis (static)
 - libvorbisfile (may be part of libvorbis) (static)
 - OpenAL Soft  (static)
-- EGLSDL v1.3 
+- EGLSDL v1.3 (static)
 
 ## Back End Rendering of Stencil Shadows
 
@@ -269,3 +304,4 @@ $FreeBSD: src/usr.bin/brandelf/brandelf.c,v 1.16 2000/07/02 03:34:08 imp Exp $
 neo/sys/linux/setup/makeself/*, neo/sys/linux/setup/makeself/README
 Copyright (c) Stéphane Peter
 Licensing: GPL v2
+
