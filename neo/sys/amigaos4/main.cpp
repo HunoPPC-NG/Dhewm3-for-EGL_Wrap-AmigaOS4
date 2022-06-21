@@ -44,8 +44,8 @@ If you have questions concerning this license or the applicable additional terms
 
 static const char * __attribute__((used)) stackcookie = "$STACK: 900000";
 #ifdef __amigaos4__
-const char *version_tag = "$VER: Dhewm3 1.5.2rc1 Betatest AOS4 (05.06.2022) port and bonus code by NOUVEL 'HunoPPC' Hugues";
-static const char __attribute((used)) amiga_ver[] = "$VER: Dhewm3 1.5.2rc1 Betatest AOS4 (05.06.2022)\0";
+const char *version_tag = "$VER: Dhewm3 1.5.2 release Named ALWAYS ULTRA Betatest AOS4 (21.06.2022) port and bonus code by NOUVEL 'HunoPPC' Hugues";
+static const char __attribute((used)) amiga_ver[] = "$VER: Dhewm3 1.5.2 release Named ALWAYS ULTRA Betatest AOS4 (21.06.2022)\0";
 #endif
 
 #include <locale.h>
