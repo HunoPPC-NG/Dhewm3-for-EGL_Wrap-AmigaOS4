@@ -28,18 +28,19 @@ Dante OpenglES2 for a source code of GLES2 : https://github.com/omcfadde/dante
 
 Dante's GLSL Shaders : https://github.com/omcfadde/gl2progs
 
-Doom3 Original source code for arb Driver : https://github.com/id-Software/DOOM-3
+Doom3 Original source code for ARB Driver : https://github.com/id-Software/DOOM-3
 
 Gl4ES for Opengl renderer : https://github.com/ptitSeb/gl4es
 
 # RELEASES
 
-## Dhewm3 V1.5.2 release Named ALWAYS ULTRA AOS4(betatest) by HunoPPC (21.06.2022)
+## Dhewm3 V1.5.2 release Named ALWAYS ULTRA AOS4(betatest) by HunoPPC (09.07.2022)
 
-- Added Joypad with EGLSDL v1.3 
-- Support multithreading in EGL_wrapper library for low CPU on DOOM3 now!
-- Support ARB2
-- Optimized sound support to relieve CPU resources
+- Added Joypad with EGLSDL v1.3 (HunoPPC 2022)
+- Added Icons and installer (HunoPPC 2022)  
+- Support multithreading in EGL_wrapper library for low CPU on DOOM3 now! (HunoPPC 2022)
+- Support ARB2 (HunoPPC 2022)
+- Optimized sound support to relieve CPU resources (HunoPPC 2022)
 - Support for the full Polish version of Doom3 (c) LEM
 - Gamma and Brightness are now applied in the shaders instead of by setting hardware gamma, can be disabled (so hardware gamma is used again) with r_gammaInShaders 0
 - s_alReverbGain CVar to reduce EFX reverb effect intensity
@@ -47,7 +48,7 @@ Gl4ES for Opengl renderer : https://github.com/ptitSeb/gl4es
 - Replaced most usages of strncpy() with something safer to prevent buffer overflows (remaining cases should be safe)
 - Support loading some mods known to need fs_game_base d3xp via Mods menu (currently, The Lost Mission and LibreCoop d3xp are supported)
 - Disable assertion in idSampleDecoderLocal::DecodeOGG() that triggered when starting a new Classic Doom3 game
-- Versions of compatible MODS (One individual executable per Module):
+- Versions of compatible MODS (One individual executable per Module by HunoPPC 2022):
   * LibreCoop
   * The Lost Mission 
   * Classic Doom3
@@ -57,14 +58,50 @@ Gl4ES for Opengl renderer : https://github.com/ptitSeb/gl4es
   * Fitz Packerton
   * Denton's Enhanced Doom3
   > > See https://dhewm3.org/mods.html for more details
-- dhewm3 now supports the Doom3 Demo gamedata  
+- dhewm3 now supports the Doom3 Demo gamedata (HunoPPC 2022) 
 - Restore "Carmack's Reverse" Z-Fail stencil shadows; use glStencilOpSeparate() if available
-- Scale menus, fullscreen videos and the PDA to 4:3 (with black bars left/right) on
-- Widescreen displays so they don't look stretched/distorted. Can be disabled with r_scaleMenusTo43 0.
+- Scale menus, fullscreen videos and the PDA to 4:3 (with black bars left/right) on (HunoPPC 2022)
+- Widescreen displays so they don't look stretched/distorted. Can be disabled with r_scaleMenusTo43 0. (HunoPPC 2022)
 - Lags in starting to play a sound which for example caused the machinegun or plasmagun sounds to stutter have been eliminated
 - Looping .wav sounds with leadin now work
-- Added support of PNG images for additional MODS
-
+- Added support of PNG images for additional MODS (HunoPPC 2022)
+- Added support Network, now it's possible playing on NET and LOCAL networks (HunoPPC 2022)
+- Added new package of Enhanced Shaders (HunoPPC 2022)
+- Addition of several video modes (HunoPPC 2022):
+		Mode  0: 320x240"
+	    Mode  2: 512x384"
+		Mode  3: 640x480"
+		Mode  4: 720x405"
+		Mode  5: 720x480"
+		Mode  6: 720x576"
+		Mode  7: 800x600"
+		Mode  8: 960x540"
+		Mode  9: 960x600"
+		Mode  10: 960x720"
+		Mode  11: 1024x576"
+		Mode  12: 1024x640"
+		Mode  13: 1024x768"
+		Mode  14: 1152x864"
+		Mode  15: 1280x720"
+		Mode  16: 1280x768"
+		Mode  17: 1280x960"
+		Mode  18: 1280x1024"
+		Mode  19: 1440x810"
+		Mode  20: 1440x900"
+		Mode  21: 1440x1080"
+		Mode  22: 1600x900"
+		Mode  23: 1600x1000"
+		Mode  24: 1600x1200"
+		Mode  25: 1920x1080"
+		Mode  26: 1920x1200"
+		Mode  27: 1920x1440"
+		Mode  28: 2048x1152"
+		Mode  29: 2560x1600"
+		Mode  30: 3200x2400"
+		Mode  31: 3840x2160"
+		Mode  32: 4096x2304"
+		Mode  33: 2880x1800"
+		Mode  34: 2560x1440"
 
 # CHANGES ON THIS VERSION
 
@@ -74,6 +111,11 @@ Compared to the original _DOOM 3_, the changes of _dhewm 3_ worth mentioning are
 - OpenAL for audio output, all OS specific audio backends are gone
 - OpenAL EFX for EAX reverb effects (read: EAX-like sound effects on all platforms/hardware)
 - Better support for widescreen (and arbitrary display resolutions)
+- New several video modes
+- New enhanced shaders
+- Support multithread with EGL_Wrap library
+- Support PNG images 
+- Support Joypad with EGLSDL v1.3
 
 
 
@@ -109,12 +151,14 @@ Required libraries are not part of the tree. These are:
 - OpenglES2 from A-EON
 - EGL_Wrap library from HunoPPC 
 - zlib (static)
+- libcurl (static)
 - libjpeg8 (static)
 - libogg (static)
 - libvorbis (static)
 - libvorbisfile (may be part of libvorbis) (static)
 - OpenAL Soft  (static)
 - EGLSDL v1.3 (static)
+
 
 ## Back End Rendering of Stencil Shadows
 
