@@ -25,10 +25,10 @@ In addition, the Doom 3 Source Code is also subject to certain additional terms.
 If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
 ===========================================================================
-*/
-//hunoppc
+*/ 
+//hunoppc  
 #include <EGLSDL/SDL.h>
-
+ 
 #include "../sys/platform.h"
 #include "../idlib/containers/HashTable.h"
 #include "../idlib/LangDict.h"
@@ -58,6 +58,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #define	MAX_PRINT_MSG_SIZE	4096
 #define MAX_WARNING_LIST	256
+
 
 typedef enum {
 	ERP_NONE,
@@ -2667,7 +2668,8 @@ void idCommonLocal::LoadGameDLL( void ) {
 
 	// there was no gamelib for this mod, use default one from base game
 	if (!gameDLL) {
-		common->Warning( "couldn't load mod-specific %s, defaulting to base game's library!", dll );
+		common->Printf( "\n" );
+		common->Warning( "couldn't load mod-specific %s, defaulting to base game's library!\n", dll );
 		//HunoPPC 2018
 		sys->DLL_GetFileName("/PROGDIR/" BASE_GAMEDIR/*BASE_GAMEDIR*/, dll, sizeof(dll));
 		LoadGameDLLbyName(dll, s);

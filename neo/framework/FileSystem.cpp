@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -55,24 +56,73 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef _choice_dhewm3
 #define GAME_CHOICE ""
-#endif
-
-#ifdef _choice_d3xp
-#define GAME_CHOICE "d3xp"
+#define BASE_CHOICE ""
 #endif
 
 #ifdef _choice_hardcorps
 #define GAME_CHOICE "hardcorps"
+#define BASE_CHOICE ""
+#endif
+
+#ifdef _choice_d3xp
+#define GAME_CHOICE "d3xp"
+#define BASE_CHOICE ""
 #endif
 
 #ifdef _choice_rivensin
 #define GAME_CHOICE "rivensin"
+#define BASE_CHOICE ""
 #endif
 
 #ifdef _choice_cdoom
 #define GAME_CHOICE "cdoom"
+#define BASE_CHOICE ""
 #endif
 
+#ifdef _choice_sikkmod
+#define GAME_CHOICE "sikkmod"
+#define BASE_CHOICE ""
+#endif
+
+#ifdef _choice_sikkmodd3xp
+#define GAME_CHOICE "sikkmodd3xp"
+#define BASE_CHOICE "d3xp"
+#endif
+
+#ifdef _choice_grimm
+#define GAME_CHOICE "grimm"
+#define BASE_CHOICE ""
+#endif
+
+#ifdef _choice_eoc
+#define GAME_CHOICE "eoc"
+#define BASE_CHOICE ""
+#endif
+
+#ifdef _choice_vanilla
+#define GAME_CHOICE "vanilla"
+#define BASE_CHOICE ""
+#endif
+
+#ifdef _choice_vanillad3xp
+#define GAME_CHOICE "vanillad3xp"
+#define BASE_CHOICE "d3xp"
+#endif
+
+#ifdef _choice_d3le
+#define GAME_CHOICE "d3le"
+#define BASE_CHOICE "d3xp"
+#endif
+
+#ifdef _choice_librecoop
+#define GAME_CHOICE "librecoop"
+#define BASE_CHOICE "d3xp"
+#endif
+
+#ifdef _choice_denton
+#define GAME_CHOICE "denton"
+#define BASE_CHOICE ""
+#endif
 
 /*
 =============================================================================
@@ -501,7 +551,7 @@ idCVar	idFileSystemLocal::fs_cdpath( "fs_cdpath", "", CVAR_SYSTEM | CVAR_INIT, "
 idCVar	idFileSystemLocal::fs_devpath( "fs_devpath", "", CVAR_SYSTEM | CVAR_INIT, "" );
 //  HunoPPC 2022 choice game datas
 idCVar	idFileSystemLocal::fs_game( "fs_game", GAME_CHOICE, CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "mod path" );
-idCVar  idFileSystemLocal::fs_game_base( "fs_game_base", "", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "alternate mod path, searched after the main fs_game path, before the basedir" );
+idCVar  idFileSystemLocal::fs_game_base( "fs_game_base", BASE_CHOICE, CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "alternate mod path, searched after the main fs_game path, before the basedir" );
 //HunoPPC 2018
 #if defined(__AROS__) || defined(WIN32) || defined(__amigaos4__)
 idCVar	idFileSystemLocal::fs_caseSensitiveOS( "fs_caseSensitiveOS", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
@@ -1729,108 +1779,6 @@ idFileSystemLocal::ListMods
 */
 idModList *idFileSystemLocal::ListMods( void ) {
 
-    //Problem HunoPPC 2018
-    /*
-	int			i;
-	const int	MAX_DESCRIPTION = 256;
-	char		desc[ MAX_DESCRIPTION ];
-
-	idStrList	dirs;
-	idStrList	pk4s;
-
-	idModList	*list = new idModList;
-
-	const char	*search[ 4 ];
-	int			isearch;
-
-	search[0] = fs_savepath.GetString();
-	search[1] = fs_devpath.GetString();
-	search[2] = fs_basepath.GetString();
-	search[3] = fs_cdpath.GetString();
-    
-	for ( isearch = 0; isearch < 4; isearch++ ) {
-
-		dirs.Clear();
-		pk4s.Clear();
-
-		// scan for directories
-		ListOSFiles( search[ isearch ], "/", dirs );
-
-		dirs.Remove( "." );
-		dirs.Remove( ".." );
-		dirs.Remove( "base" );
-		dirs.Remove( "pb" );
-
-        common->Printf( "ListMods phase -- 1 --\n" );
-
-		// see if there are any pk4 files in each directory
-		for( i = 0; i < dirs.Num(); i++ ) {
-            common->Printf( "ListMods phase -- 2 --\n" );
-			idStr gamepath = BuildOSPath( search[ isearch ], dirs[ i ], "" );
-			ListOSFiles( gamepath, ".pk4", pk4s );
-            common->Printf( "ListMods phase -- 3 --\n" );
-			if ( pk4s.Num() ) {
-				if ( !list->mods.Find( dirs[ i ] ) ) {
-                    common->Printf( "ListMods phase -- 4 --\n" );
-					// D3 1.3 #31, only list d3xp if the pak is present
-					if ( dirs[ i ].Icmp( "d3xp" ) || HasD3XP() ) {
-                        common->Printf( "ListMods phase -- 5 --\n" );
-						list->mods.Append( dirs[ i ] );
-                        common->Printf( "ListMods phase -- 6 --\n" ); 					  }
-				}
-			}
-		}
-	}
-    
-    //HunoPPC Hack 2018
-    
-
-	list->mods.Sort();
-    common->Printf( "ListMods phase -- 7 --\n" );
-
-	// read the descriptions for each mod - search all paths
-	for ( i = 0; i < list->mods.Num(); i++ ) {
-
-		for ( isearch = 0; isearch < 4; isearch++ ) {
-            common->Printf( "ListMods phase -- 8 --\n" );
-
-			idStr descfile = BuildOSPath( search[ isearch ], list->mods[ i ], "description.txt" );
-			FILE *f = OpenOSFile( descfile, "r" );
-			if ( f ) {
-				if ( fgets( desc, MAX_DESCRIPTION, f ) ) {
-                    common->Printf( "ListMods phase -- 9 --\n" );
-					list->descriptions.Append( desc );
-					fclose( f );
-					break;
-				} else {
-					common->DWarning( "Error reading %s", descfile.c_str() );
-					fclose( f );
-					continue;
-				}
-			}
-		}
-
-		if ( isearch == 4 ) {
-            common->Printf( "ListMods phase -- 10 --\n" );
-			list->descriptions.Append( list->mods[ i ] );
-		}
-	}
-
-	list->mods.Insert( "" );
-    common->Printf( "ListMods phase -- 11 --\n" );
-	list->descriptions.Insert( "dhewm 3" );
-    common->Printf( "ListMods phase -- 12 --\n" );
-
-	assert( list->mods.Num() == list->descriptions.Num() );
-    common->Printf( "ListMods phase -- 13 --\n" );
-
-	return list;
-    */
-    /*
-    idModList	*list = new idModList;
-
-    return list;
-    */
 	int			i;
 	const int	MAX_DESCRIPTION = 256;
 	char		desc[ MAX_DESCRIPTION ];

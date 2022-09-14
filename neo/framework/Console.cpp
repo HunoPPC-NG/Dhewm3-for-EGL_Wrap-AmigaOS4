@@ -1,8 +1,9 @@
 /*
 ===========================================================================
 
-Doom 3 GPL Source Code
+Doom 3 GPL Source Code 
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -15,7 +16,7 @@ Doom 3 Source Code is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -192,7 +193,8 @@ void SCR_DrawTextRightAlign( float &y, const char *text, ... ) {
 SCR_DrawFPS
 ==================
 */
-#define	FPS_FRAMES	4
+//HunoPPC 2022
+#define	FPS_FRAMES	8
 float SCR_DrawFPS( float y ) {
 	char		*s;
 	int			w;

@@ -35,17 +35,35 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-#define GAME_NAME						"Doom 3 EGL_wrap AmigaOS4"	    // appears on window titles and errors
+#define GAME_NAME						"Doom3 1.5.2 beta 1 EGL_wrap AmigaOS4"	    // appears on window titles and errors
 
-#define ENGINE_VERSION					"Dhewm3 1.5.2 EGL_wrap AmigaOS4"    // printed in console
+#define ENGINE_VERSION					"Dhewm3 1.5.2 beta 1 EGL_wrap AmigaOS4"    // printed in console
 
-#define GAME_NAME_HARDCORPS				"HardCorps MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+#define GAME_NAME_HARDCORPS				"HardCorps beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
 
-#define GAME_NAME_D3XP					"Resurrection of Evil MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+#define GAME_NAME_D3XP					"Resurrection of Evil beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
 
-#define GAME_NAME_RIVENSIN				"Rivensin MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+#define GAME_NAME_RIVENSIN				"Rivensin beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
 
-#define GAME_NAME_CDOOM				    "Classic Doom MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+#define GAME_NAME_CDOOM				    "Classic Doom3 beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+
+#define GAME_NAME_EOC				    "Edge of chaos beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+
+#define GAME_NAME_GRIMM				    "Grimm beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+
+#define GAME_NAME_SIKKMOD				"Sikkmod beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+
+#define GAME_NAME_SIKKMODD3XP			"Sikkmod Resurrection of Evil beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+
+#define GAME_NAME_VANILLA				"Vanilla beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+
+#define GAME_NAME_VANILLAD3XP			"Vanilla Resurrection of Evil beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+
+#define GAME_NAME_D3LE			        "The Lost Mission beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+
+#define GAME_NAME_LIBRECOOP			    "Librecoop beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
+
+#define GAME_NAME_DENTON		        "Denton beta 1 MOD EGL_wrap AmigaOS4"      // appears on window titles and errors
 
 // paths
 #define	BASE_GAMEDIR					"base"
