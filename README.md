@@ -34,6 +34,19 @@ Gl4ES for Opengl renderer : https://github.com/ptitSeb/gl4es
 
 # RELEASES
 
+## Dhewm3 V1.5.3 release Named ALWAYS ULTRA AOS4(betatest) by HunoPPC (14.09.2022)
+
+- Now ARB working fine for low machine (increase speed on LibEGL_wrap), on fullHD 40 FPS, this renderer is not supported on the future
+- Now compiled with GCC Version 11 and a new SDK for AmigaOS4
+- Added a new versions of compatible MODS (One individual executable per Module by HunoPPC 2022):
+  * Vanilla  W.I.P
+  * Edge of chaos  W.I.P
+  * Grimm  W.I.P
+  * Sikkmod  W.I.P
+- Now a Mod "The Lost Mission"  WORKING
+- Use a GLSL native on EGL_Wrap with new renderer effects W.I.P 45%
+- Now on ARB2 on fullHD 20 FPS (HIGH textures and effects renderer) W.I.P 30%
+
 ## Dhewm3 V1.5.2 release Named ALWAYS ULTRA AOS4(betatest) by HunoPPC (09.07.2022)
 
 - Added Joypad with EGLSDL v1.3 (HunoPPC 2022)
@@ -49,14 +62,14 @@ Gl4ES for Opengl renderer : https://github.com/ptitSeb/gl4es
 - Support loading some mods known to need fs_game_base d3xp via Mods menu (currently, The Lost Mission and LibreCoop d3xp are supported)
 - Disable assertion in idSampleDecoderLocal::DecodeOGG() that triggered when starting a new Classic Doom3 game
 - Versions of compatible MODS (One individual executable per Module by HunoPPC 2022):
-  * LibreCoop
-  * The Lost Mission 
-  * Classic Doom3
-  * HardCorps
-  * Resurrection of Evil
-  * Rivensin
-  * Fitz Packerton
-  * Denton's Enhanced Doom3
+  * LibreCoop W.I.P
+  * The Lost Mission  W.I.P
+  * Classic Doom3 Working
+  * HardCorps Working
+  * Resurrection of Evil Working
+  * Rivensin Working
+  * Fitz Packerton  W.I.P
+  * Denton's Enhanced Doom3  W.I.P
   > > See https://dhewm3.org/mods.html for more details
 - dhewm3 now supports the Doom3 Demo gamedata (HunoPPC 2022) 
 - Restore "Carmack's Reverse" Z-Fail stencil shadows; use glStencilOpSeparate() if available
@@ -113,7 +126,7 @@ Compared to the original _DOOM 3_, the changes of _dhewm 3_ worth mentioning are
 - Better support for widescreen (and arbitrary display resolutions)
 - New several video modes
 - New enhanced shaders
-- Support multithread with EGL_Wrap library
+- Support multithread for future multicore with EGL_Wrap library
 - Support PNG images 
 - Support Joypad with EGLSDL v1.3
 
