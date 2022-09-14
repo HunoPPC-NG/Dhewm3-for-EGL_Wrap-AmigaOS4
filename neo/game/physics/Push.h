@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -33,7 +34,12 @@ If you have questions concerning this license or the applicable additional terms
 #include "../cm/CollisionModel.h"
 
 #include "../physics/Clip.h"
+
+#ifdef _choice_prey
+#include "../../game/GameBase.h"
+#else
 #include "GameBase.h"
+#endif
 
 class idEntity;
 

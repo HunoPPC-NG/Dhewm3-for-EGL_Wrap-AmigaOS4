@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -966,7 +967,6 @@ idClip::TestHugeTranslation
 */
 ID_INLINE bool TestHugeTranslation( trace_t &results, const idClipModel *mdl, const idVec3 &start, const idVec3 &end, const idMat3 &trmAxis ) {
 	if ( mdl != NULL && ( end - start ).LengthSqr() > Square( CM_MAX_TRACE_DIST ) ) {
-		assert( 0 );
 
 		results.fraction = 0.0f;
 		results.endpos = start;
@@ -980,6 +980,19 @@ ID_INLINE bool TestHugeTranslation( trace_t &results, const idClipModel *mdl, co
 		} else {
 			gameLocal.Printf( "huge translation for clip model %d\n", mdl->GetId() );
 		}
+		//HunoPPC 2022
+		gameLocal.Printf( "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n", start.x, start.y, start.z, end.x, end.y, end.z);
+
+		if ( mdl->GetEntity() != NULL && idStr::Cmp(mdl->GetEntity()->GetName(), "monster_zsec_shotgun_12") == 0
+		     && idStr::Cmp(gameLocal.GetMapName(), "maps/game/alphalabs4.map") == 0 )
+		{
+			// there is a map bug in alpha4 where the ride of death can push a monster far into the void
+			// don't assert there
+			return true;
+		}
+		//HunoPPC 2022
+		assert( 0 );
+		
 		return true;
 	}
 	return false;
