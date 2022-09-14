@@ -80,6 +80,7 @@ class idFile;
 class idVec3;
 class idVec4;
 
+
 // basic colors
 extern	idVec4 colorBlack;
 extern	idVec4 colorWhite;
