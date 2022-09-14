@@ -3,7 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2022 Hugues Nouvel
+Copyright (C) 2022 Hugues Nouvel 
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -26,12 +26,6 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-
-//hunoppc disable lan code
-//#define ACTIVE_LAN
-
-
-
 #include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -47,11 +41,8 @@ If you have questions concerning this license or the applicable additional terms
 #include <errno.h>
 #include <sys/select.h>
 #include <net/if.h>
-#ifndef __amigaos4__
-#include <ifaddrs.h>
-#endif
 
-//hunoppc
+
 #include "../sys/platform.h"
 #include "../framework/Common.h"
 #include "../framework/CVarSystem.h"
@@ -79,7 +70,6 @@ NetadrToSockadr
 =============
 */
 static void NetadrToSockadr( const netadr_t * a, struct sockaddr_in *s ) {
-    #ifdef ACTIVE_LAN
 	memset(s, 0, sizeof(*s));
 
 	if ( a->type == NA_BROADCAST ) {
@@ -93,7 +83,6 @@ static void NetadrToSockadr( const netadr_t * a, struct sockaddr_in *s ) {
 		*(int *) &s->sin_addr = *(int *) &a->ip;
 		s->sin_port = htons( (short)a->port );
 	}
-#endif
 }
 
 /*
@@ -102,7 +91,6 @@ SockadrToNetadr
 =============
 */
 static void SockadrToNetadr(struct sockaddr_in *s, netadr_t * a) {
-    #ifdef ACTIVE_LAN
 	unsigned int ip = *(int *)&s->sin_addr;
 	*(int *)&a->ip = ip;
 	a->port = ntohs( s->sin_port );
@@ -113,7 +101,6 @@ static void SockadrToNetadr(struct sockaddr_in *s, netadr_t * a) {
 	} else {
 		a->type = NA_IP;
 	}
-#endif
 }
 
 /*
@@ -122,9 +109,9 @@ ExtractPort
 =============
 */
 static bool ExtractPort( const char *src, char *buf, int bufsize, int *port ) {
-    #ifdef ACTIVE_LAN
 	char *p;
 	idStr::Copynz( buf, src, bufsize );
+	p = buf; p += Min( bufsize - 1, (int)strlen( src ) ); *p = '\0';
 	p = strchr( buf, ':' );
 	if ( !p ) {
 		return false;
@@ -136,7 +123,6 @@ static bool ExtractPort( const char *src, char *buf, int bufsize, int *port ) {
 		return false;
 	}
 	return true;
-    #endif
 }
 
 /*
@@ -145,7 +131,6 @@ StringToSockaddr
 =============
 */
 static bool StringToSockaddr( const char *s, struct sockaddr_in *sadr, bool doDNSResolve ) {
-    #ifdef ACTIVE_LAN
 	struct hostent *h;
 	char buf[256];
 	int port;
@@ -156,7 +141,7 @@ static bool StringToSockaddr( const char *s, struct sockaddr_in *sadr, bool doDN
 	sadr->sin_port = 0;
 
 	if (s[0] >= '0' && s[0] <= '9') {
-		if ( !inet_aton( s, &sadr->sin_addr ) ) {
+		if ( !inet_aton( (char *)s, &sadr->sin_addr ) ) {
 			// check for port
 			if ( !ExtractPort( s, buf, sizeof( buf ), &port ) ) {
 				return false;
@@ -180,7 +165,6 @@ static bool StringToSockaddr( const char *s, struct sockaddr_in *sadr, bool doDN
 	}
 
 	return true;
-    #endif
 }
 
 /*
@@ -189,7 +173,6 @@ Sys_StringToAdr
 =============
 */
 bool Sys_StringToNetAdr( const char *s, netadr_t * a, bool doDNSResolve ) {
-    #ifdef ACTIVE_LAN
 	struct sockaddr_in sadr;
 
 	if ( !StringToSockaddr( s, &sadr, doDNSResolve ) ) {
@@ -198,7 +181,6 @@ bool Sys_StringToNetAdr( const char *s, netadr_t * a, bool doDNSResolve ) {
 
 	SockadrToNetadr( &sadr, a );
 	return true;
-    #endif
 }
 
 /*
@@ -207,7 +189,6 @@ Sys_NetAdrToString
 =============
 */
 const char *Sys_NetAdrToString( const netadr_t a ) {
-    #ifdef ACTIVE_LAN
 	static char s[64];
 
 	if ( a.type == NA_LOOPBACK ) {
@@ -221,7 +202,6 @@ const char *Sys_NetAdrToString( const netadr_t a ) {
 			a.ip[0], a.ip[1], a.ip[2], a.ip[3], a.port );
 	}
 	return s;
-    #endif
 }
 
 /*
@@ -230,7 +210,6 @@ Sys_IsLANAddress
 ==================
 */
 bool Sys_IsLANAddress( const netadr_t adr ) {
-    #ifdef ACTIVE_LAN
 	int i;
 	unsigned int ip;
 
@@ -259,7 +238,6 @@ bool Sys_IsLANAddress( const netadr_t adr ) {
 	}
 
 	return false;
-    #endif
 }
 
 /*
@@ -270,7 +248,6 @@ Compares without the port
 ===================
 */
 bool Sys_CompareNetAdrBase( const netadr_t a, const netadr_t b ) {
-    #ifdef ACTIVE_LAN
 	if ( a.type != b.type ) {
 		return false;
 	}
@@ -288,7 +265,6 @@ bool Sys_CompareNetAdrBase( const netadr_t a, const netadr_t b ) {
 
 	common->Printf( "Sys_CompareNetAdrBase: bad address type\n" );
 	return false;
-    #endif
 }
 
 /*
@@ -298,16 +274,11 @@ NET_InitNetworking
 */
 void Sys_InitNetworking(void)
 {
-    #ifdef ACTIVE_LAN
+
 	unsigned int ip, mask;
-	struct ifaddrs *ifap, *ifp;
+	struct ifaddr *ifap, *ifp;
 
 	num_interfaces = 0;
-
-	if( getifaddrs( &ifap ) < 0 ) {
-		common->FatalError( "InitNetworking: SIOCGIFCONF error - %s\n", strerror( errno ) );
-		return;
-	}
 
 	for( ifp = ifap; ifp; ifp = ifp->ifa_next ) {
 		if ( !ifp->ifa_addr )
@@ -322,7 +293,6 @@ void Sys_InitNetworking(void)
 		if ( !ifp->ifa_netmask )
 			continue;
 
-		common->Printf( "found interface %s - ", ifp->ifa_name);
 
 		ip = ntohl( *( unsigned int *)&ifp->ifa_addr->sa_data[2] );
 		mask = ntohl( *( unsigned int *)&ifp->ifa_netmask->sa_data[2] );
@@ -344,8 +314,6 @@ void Sys_InitNetworking(void)
 		if (num_interfaces >= MAX_INTERFACES)
 			break;
 	}
-	freeifaddrs(ifap);
-    #endif
 }
 
 /*
@@ -354,7 +322,6 @@ IPSocket
 ====================
 */
 static int IPSocket( const char *net_interface, int port, netadr_t *bound_to = NULL ) {
-    #ifdef ACTIVE_LAN
 	int newsocket;
 	struct sockaddr_in address;
 	int i = 1;
@@ -371,7 +338,7 @@ static int IPSocket( const char *net_interface, int port, netadr_t *bound_to = N
 	}
 	// make it non-blocking
 	int on = 1;
-	if ( ioctl( newsocket, FIONBIO, &on ) == -1 ) {
+	if ( ioctl( newsocket, FIONBIO,  (char *)&on ) == -1 ) {
 		common->Printf( "ERROR: IPSocket: ioctl FIONBIO:%s\n",
 				   strerror( errno ) );
 		return 0;
@@ -414,7 +381,6 @@ static int IPSocket( const char *net_interface, int port, netadr_t *bound_to = N
 	}
 
 	return newsocket;
-    #endif
 }
 
 /*
@@ -423,10 +389,8 @@ idPort::idPort
 ==================
 */
 idPort::idPort() {
-    #ifdef ACTIVE_LAN
 	netSocket = 0;
 	memset( &bound_to, 0, sizeof( bound_to ) );
-    #endif
 }
 
 /*
@@ -435,9 +399,7 @@ idPort::~idPort
 ==================
 */
 idPort::~idPort() {
-    #ifdef ACTIVE_LAN
 	Close();
-    #endif
 }
 
 /*
@@ -446,13 +408,11 @@ idPort::Close
 ==================
 */
 void idPort::Close() {
-    #ifdef ACTIVE_LAN
 	if ( netSocket ) {
 		close(netSocket);
 		netSocket = 0;
 		memset( &bound_to, 0, sizeof( bound_to ) );
 	}
-#endif
 }
 
 /*
@@ -461,7 +421,6 @@ idPort::GetPacket
 ==================
 */
 bool idPort::GetPacket( netadr_t &net_from, void *data, int &size, int maxSize ) {
-    #ifdef ACTIVE_LAN
 	int ret;
 	struct sockaddr_in from;
 	int fromlen;
@@ -487,7 +446,6 @@ bool idPort::GetPacket( netadr_t &net_from, void *data, int &size, int maxSize )
 	SockadrToNetadr( &from, &net_from );
 	size = ret;
 	return true;
-    #endif
 }
 
 /*
@@ -496,7 +454,6 @@ idPort::GetPacketBlocking
 ==================
 */
 bool idPort::GetPacketBlocking( netadr_t &net_from, void *data, int &size, int maxSize, int timeout ) {
-    #ifdef ACTIVE_LAN
 	fd_set				set;
 	struct timeval		tv;
 	int					ret;
@@ -541,7 +498,6 @@ bool idPort::GetPacketBlocking( netadr_t &net_from, void *data, int &size, int m
 	SockadrToNetadr( &from, &net_from );
 	size = ret;
 	return true;
-    #endif
 }
 
 /*
@@ -550,7 +506,6 @@ idPort::SendPacket
 ==================
 */
 void idPort::SendPacket( const netadr_t to, const void *data, int size ) {
-    #ifdef ACTIVE_LAN
 	int ret;
 	struct sockaddr_in addr;
 
@@ -569,7 +524,6 @@ void idPort::SendPacket( const netadr_t to, const void *data, int size ) {
 	if ( ret == -1 ) {
 		common->Printf( "idPort::SendPacket ERROR: to %s: %s\n", Sys_NetAdrToString( to ), strerror( errno ) );
 	}
-#endif
 }
 
 /*
@@ -578,7 +532,6 @@ idPort::InitForPort
 ==================
 */
 bool idPort::InitForPort( int portNumber ) {
-    #ifdef ACTIVE_LAN
 	netSocket = IPSocket( net_ip.GetString(), portNumber, &bound_to );
 	if ( netSocket <= 0 ) {
 		netSocket = 0;
@@ -586,7 +539,6 @@ bool idPort::InitForPort( int portNumber ) {
 		return false;
 	}
 	return true;
-    #endif
 }
 
 //=============================================================================
@@ -597,10 +549,8 @@ idTCP::idTCP
 ==================
 */
 idTCP::idTCP() {
-    #ifdef ACTIVE_LAN
 	fd = 0;
 	memset(&address, 0, sizeof(address));
-    #endif
 }
 
 /*
@@ -609,9 +559,7 @@ idTCP::~idTCP
 ==================
 */
 idTCP::~idTCP() {
-    #ifdef ACTIVE_LAN
 	Close();
-    #endif
 }
 
 /*
@@ -620,7 +568,6 @@ idTCP::Init
 ==================
 */
 bool idTCP::Init( const char *host, short port ) {
-    #ifdef ACTIVE_LAN
 	struct sockaddr_in sadr;
 	if ( !Sys_StringToNetAdr( host, &address, true ) ) {
 		common->Printf( "Couldn't resolve server name \"%s\"\n", host );
@@ -665,7 +612,6 @@ bool idTCP::Init( const char *host, short port ) {
 
 	common->DPrintf("Opened TCP connection\n");
 	return true;
-    #endif
 }
 
 /*
@@ -674,12 +620,10 @@ idTCP::Close
 ==================
 */
 void idTCP::Close() {
-    #ifdef ACTIVE_LAN
 	if (fd) {
 		close(fd);
 	}
 	fd = 0;
-    #endif
 }
 
 /*
@@ -688,7 +632,6 @@ idTCP::Read
 ==================
 */
 int idTCP::Read(void *data, int size) {
-    #ifdef ACTIVE_LAN
 	int nbytes;
 
 	if (!fd) {
@@ -720,7 +663,6 @@ int idTCP::Read(void *data, int size) {
 	}
 
 	return nbytes;
-    #endif
 }
 
 /*
@@ -730,13 +672,10 @@ idTCP::Write
 */
 
 static void got_SIGPIPE( int signum ) {
-    #ifdef ACTIVE_LAN
 	common->Printf( "idTCP: SIGPIPE\n" );
-    #endif
 }
 
 int	idTCP::Write(void *data, int size) {
-    #ifdef ACTIVE_LAN
 	int nbytes;
 
 	if ( !fd ) {
@@ -744,18 +683,6 @@ int	idTCP::Write(void *data, int size) {
 		return -1;
 	}
 
-	struct sigaction bak_action;
-	struct sigaction action;
-
-	action.sa_handler = got_SIGPIPE;
-	sigemptyset( &action.sa_mask );
-	action.sa_flags = 0;
-
-	if ( sigaction( SIGPIPE, &action, &bak_action ) != 0 ) {
-		common->Printf( "ERROR: idTCP::Write: failed to set temporary SIGPIPE handler\n" );
-		Close();
-		return -1;
-	}
 
 #if defined(_GNU_SOURCE) && defined(TEMP_FAILURE_RETRY)
 	// handle EINTR interrupted system call with TEMP_FAILURE_RETRY -  this is probably GNU libc specific
@@ -771,12 +698,6 @@ int	idTCP::Write(void *data, int size) {
 		return -1;
 	}
 
-	if ( sigaction( SIGPIPE, &bak_action, NULL ) != 0 ) {
-		common->Printf( "ERROR: idTCP::Write: failed to reset SIGPIPE handler\n" );
-		Close();
-		return -1;
-	}
 
 	return nbytes;
-    #endif
 }
