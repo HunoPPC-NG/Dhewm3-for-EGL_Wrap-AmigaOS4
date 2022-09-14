@@ -11,8 +11,6 @@
 #define BUILD_LIBDIR			"base"
 #define BUILD_DATADIR			"base"
 
-//#define HAVE_JPEG_MEM_SRC
-
-//#define ID_ENABLE_CURL
+#define ID_ENABLE_CURL
 
 #endif
