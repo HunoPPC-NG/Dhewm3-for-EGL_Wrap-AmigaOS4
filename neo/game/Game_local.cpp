@@ -3,6 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Hugues Nouvel
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -2408,6 +2409,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 		// see if a target_sessionCommand has forced a changelevel
 		if ( sessionCommand.Length() ) {
+			//HunoPPC 2022
 			idStr::Copynz( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
 			break;
 		}
@@ -4373,6 +4375,7 @@ idGameLocal::GetBestGameType
 ============
 */
 void idGameLocal::GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] ) {
+	//HunoPPC 2022
 	idStr::Copynz( buf, gametype, MAX_STRING_CHARS );
 	buf[ MAX_STRING_CHARS - 1 ] = '\0';
 }
