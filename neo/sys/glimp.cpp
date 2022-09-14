@@ -79,7 +79,7 @@ GLimp_Init
 ===================
 */
 bool GLimp_Init(glimpParms_t parms) {
-	common->Printf("Initializing OpenGL subsystem\n");
+	common->Printf("Initializing Doom3 OpenGL subsystem\n");
 
 	assert(SDL_WasInit(SDL_INIT_VIDEO));
 
@@ -87,15 +87,11 @@ bool GLimp_Init(glimpParms_t parms) {
 
 	if (parms.fullScreen)
 		flags |= SDL_WINDOW_FULLSCREEN;
-    #ifndef __amigaos4__
+
 	int colorbits = 24;
 	int depthbits = 24;
 	int stencilbits = 8;
-    #else
-    int colorbits = 24;
-	int depthbits = 24;
-	int stencilbits = 8;
-    #endif
+
 
 
 	for (int i = 0; i < 16; i++) {
@@ -185,6 +181,33 @@ bool GLimp_Init(glimpParms_t parms) {
         #endif
         #ifdef _choice_cdoom
         SDL_WM_SetCaption(GAME_NAME_CDOOM, GAME_NAME_CDOOM);
+        #endif
+		#ifdef _choice_sikkmod
+        SDL_WM_SetCaption(GAME_NAME_SIKKMOD, GAME_NAME_SIKKMOD);
+        #endif
+		#ifdef _choice_sikkmodd3xp
+        SDL_WM_SetCaption(GAME_NAME_SIKKMODD3XP, GAME_NAME_SIKKMODD3XP);
+        #endif
+		#ifdef _choice_grimm
+        SDL_WM_SetCaption(GAME_NAME_GRIMM, GAME_NAME_GRIMM);
+        #endif
+		#ifdef _choice_eoc
+        SDL_WM_SetCaption(GAME_NAME_EOC, GAME_NAME_EOC);
+        #endif
+		#ifdef _choice_vanilla
+        SDL_WM_SetCaption(GAME_NAME_VANILLA, GAME_NAME_VANILLA);
+        #endif
+		#ifdef _choice_vanillad3xp
+        SDL_WM_SetCaption(GAME_NAME_VANILLAD3XP, GAME_NAME_VANILLAD3XP);
+        #endif
+		#ifdef _choice_d3le
+        SDL_WM_SetCaption(GAME_NAME_D3LE, GAME_NAME_D3LE);
+        #endif
+		#ifdef _choice_librecoop
+        SDL_WM_SetCaption(GAME_NAME_LIBRECOOP, GAME_NAME_LIBRECOOP);
+        #endif
+        #ifdef _choice_denton
+        SDL_WM_SetCaption(GAME_NAME_DENTON, GAME_NAME_DENTON);
         #endif
         #endif
 

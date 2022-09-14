@@ -36,7 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../framework/Common.h"
 
 #include "../sys/sys_public.h"
-
+//HunoPPC 2022
 typedef unsigned long OS4_threadIDENTIFIER;
 
 static SDL_mutex	*mutex[MAX_CRITICAL_SECTIONS] = { };
