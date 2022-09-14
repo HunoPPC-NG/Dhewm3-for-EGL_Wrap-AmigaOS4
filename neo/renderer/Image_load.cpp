@@ -93,6 +93,8 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 	case GL_RGBA4:
 		return 16;
 	case GL_RGB5:
+		return 16; //HunoPPC 2022
+	case GL_RGB5_A1:
 		return 16;
 	case GL_COLOR_INDEX8_EXT:
 		return 8;
@@ -1744,7 +1746,8 @@ Bind
 Automatically enables 2D mapping, cube mapping, or 3D texturing if needed
 ==============
 */
-void idImage::Bind() {
+//HunoPPC 2022
+bool idImage::Bind() {
 	// if this is an image that we are caching, move it to the front of the LRU chain
 	if ( partialImage ) {
 		if ( cacheUsageNext ) {
@@ -1770,7 +1773,9 @@ void idImage::Bind() {
 			if ( !backgroundLoadInProgress ) {
 				StartBackgroundImageLoad();
 			}
-			return;
+            //HunoPPC 2022
+			return false;
+            //
 		}
 
 		// load the image on demand here, which isn't our normal game operating mode
@@ -2225,6 +2230,9 @@ void idImage::Print() const {
 	case GL_RGBA4:
 		common->Printf( "RGBA4 " );
 		break;
+		//HunoPPC 2022
+	case GL_RGB5_A1:
+		common->Printf( "RGB5_A1  " );
 	case GL_RGB5:
 		common->Printf( "RGB5  " );
 		break;

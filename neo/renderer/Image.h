@@ -161,7 +161,9 @@ public:
 	// automatically enables or disables cube mapping or texture3D
 	// May perform file loading if the image was not preloaded.
 	// May start a background image read.
-	void		Bind();
+    //HunoPPC 2022
+	bool		Bind();
+    //
 
 	// for use with fragment programs, doesn't change any enable2D/3D/cube states
 	void		BindFragment();
@@ -407,6 +409,9 @@ public:
 	idImage *			blackImage;					// full of 0x00
 	idImage *			normalCubeMapImage;			// cube map to normalize STR into RGB
 	idImage *			noFalloffImage;				// all 255, but zero clamped
+    //HunoPPC 2022 
+    idImage * 			quadraticImage;	
+	//
 	idImage *			fogImage;					// increasing alpha is denser fog
 	idImage *			fogEnterImage;				// adjust fogImage alpha based on terminator plane
 	idImage *			cinematicImage;

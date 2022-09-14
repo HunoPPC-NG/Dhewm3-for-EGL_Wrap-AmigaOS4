@@ -8,7 +8,7 @@ Copyright (C) 2022 Hugues Nouvel
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
+it under the terms of the GNU General Public License as published by 
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
@@ -1408,8 +1408,6 @@ void idImageManager::SetNormalPalette( void ) {
 	if ( !glConfig.sharedTexturePaletteAvailable ) {
 		return;
 	}
-#if !defined(__amigaos4__) //HunoPPC 2022
-    //Disabled but not working on AmigaOS4
 	qglColorTableEXT( GL_SHARED_TEXTURE_PALETTE_EXT,
 					   GL_RGB,
 					   256,
@@ -1418,7 +1416,6 @@ void idImageManager::SetNormalPalette( void ) {
 					   temptable );
 
 	qglEnable( GL_SHARED_TEXTURE_PALETTE_EXT );
-#endif	
 }
 
 /*
@@ -1516,7 +1513,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 		declManager->MediaPrint( "DEFAULTED\n" );
 		return globalImages->defaultImage;
 	}
-
+    //common->Printf( "Loading %s\n", _name );
 	// strip any .tga file extensions from anywhere in the _name, including image program parameters
 	name = _name;
 	name.Replace( ".tga", "" );
@@ -1993,7 +1990,8 @@ void idImageManager::Init() {
 	fogEnterImage = ImageFromFunction( "_fogEnter", R_FogEnterImage );
 	normalCubeMapImage = ImageFromFunction( "_normalCubeMap", makeNormalizeVectorCubeMap );
 	noFalloffImage = ImageFromFunction( "_noFalloff", R_CreateNoFalloffImage );
-	ImageFromFunction( "_quadratic", R_QuadraticImage );
+	//HunoPPC 2022
+	quadraticImage = ImageFromFunction( "_quadratic", R_QuadraticImage );
 
 	// cinematicImage is used for cinematic drawing
 	// scratchImage is used for screen wipes/doublevision etc..

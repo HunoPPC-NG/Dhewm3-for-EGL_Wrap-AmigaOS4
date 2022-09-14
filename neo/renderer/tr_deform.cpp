@@ -545,6 +545,7 @@ static void R_FlareDeformFast( drawSurf_t *surf ) {
 	memcpy( newTriHN->indexes, triIndexes, sizeof( triIndexes ) );
 
 	R_FinishDeform( surf, newTriHN, ac );
+   
 }
 
 

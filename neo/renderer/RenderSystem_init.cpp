@@ -44,13 +44,9 @@ If you have questions concerning this license or the applicable additional terms
 //HunoPPC 2022
 #include "../framework/GameCallbacks_local.h"
 
-// Vista OpenGL wrapper check
-#ifdef _WIN32
-#include "sys/win32/win_local.h"
-#endif
-
 //hunoppc ACTIVATED VIRTUAL OPENGL
 #define FORCEVIRTUALGLFUNCTIONS 0
+
 
 // functions that are not called every frame
 
@@ -103,7 +99,7 @@ idCVar r_finish( "r_finish", "0", CVAR_RENDERER | CVAR_BOOL, "force a call to gl
 idCVar r_swapInterval( "r_swapInterval", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "changes the GL swap interval" );
 
 idCVar r_gamma( "r_gamma", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables", 0.5f, 3.0f );
-idCVar r_brightness( "r_brightness", "1.119048", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables", 0.5f, 2.0f );
+idCVar r_brightness( "r_brightness", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables", 0.5f, 2.0f );
 idCVar r_gammaInShader( "r_gammaInShader", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Set gamma and brightness in shaders instead using hardware gamma" );
 
 idCVar r_renderer( "r_renderer", "arb2", CVAR_RENDERER | CVAR_ARCHIVE, "hardware specific renderer path to use", r_rendererArgs, idCmdSystem::ArgCompletion_String<r_rendererArgs> );
@@ -791,8 +787,15 @@ void R_InitOpenGL( void ) {
 	qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
 	glConfig.maxTextureSize = temp;
 
-	// stubbed or broken drivers may have reported 0...
-	if ( glConfig.maxTextureSize <= 0 ) {
+	//HunoPPC 2022
+    qglGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, (GLint *)&glConfig.maxTextureUnits);
+
+	if (glConfig.maxTextureUnits > MAX_MULTITEXTURE_UNITS) {
+		glConfig.maxTextureUnits = MAX_MULTITEXTURE_UNITS;
+	}
+
+    // stubbed or broken drivers may have reported 0...
+	if( glConfig.maxTextureSize <= 0 ) {
 		glConfig.maxTextureSize = 256;
 	}
 
@@ -838,28 +841,6 @@ cmdSystem->AddCommand("reloadGLSLprograms", R_ReloadGLSLPrograms_f, CMD_FL_RENDE
 		common->Printf( "Will apply r_gamma and r_brightness in hardware (possibly on all screens; r_gammaInShader 0)\n" );
 		R_SetColorMappings();
 	}
-
-#ifdef _WIN32
-	static bool glCheck = false;
-	if ( !glCheck && win32.osversion.dwMajorVersion == 6 ) {
-		glCheck = true;
-		if ( !idStr::Icmp( glConfig.vendor_string, "Microsoft" ) && idStr::FindText( glConfig.renderer_string, "OpenGL-D3D" ) != -1 ) {
-			if ( cvarSystem->GetCVarBool( "r_fullscreen" ) ) {
-				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart partial windowed\n" );
-				Sys_GrabMouseCursor( false );
-			}
-			int ret = MessageBox( NULL, "Please install OpenGL drivers from your graphics hardware vendor to run " GAME_NAME ".\nYour OpenGL functionality is limited.",
-				"Insufficient OpenGL capabilities", MB_OKCANCEL | MB_ICONWARNING | MB_TASKMODAL );
-			if ( ret == IDCANCEL ) {
-				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
-				cmdSystem->ExecuteCommandBuffer();
-			}
-			if ( cvarSystem->GetCVarBool( "r_fullscreen" ) ) {
-				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
-			}
-		}
-	}
-#endif
 }
 
 /*
@@ -1939,11 +1920,23 @@ static void GfxInfo_f( const idCmdArgs &args ) {
     common->Printf("CPU: %s\n", Sys_GetProcessorString());
 	const char *active[2] = { "", " (ACTIVE)" };
 
-	if ( glConfig.allowARB2Path ) {
+    common->Printf( "ARB path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB] );
+	//HunoPPC 2022
+	if ( tr.backEndRenderer == BE_GLSL ) {
+    if( glConfig.allowGLSLPath ) {
+		common->Printf( "GLSL path ENABLED%s\n", active[tr.backEndRenderer == BE_GLSL] );
+	} else {
+		common->Printf( "GLSL path disabled\n" );
+	}
+
+    }else{
+    if ( glConfig.allowARB2Path ) {
 		common->Printf( "ARB2 path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB2] );
 	} else {
 		common->Printf( "ARB2 path disabled\n" );
 	}
+    }
+    
 
 	if ( r_finish.GetBool() ) {
 		common->Printf( "Forcing glFinish\n" );
@@ -1962,7 +1955,7 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 	}
 
 	if ( vertexCache.IsFast() ) {
-		common->Printf( "Vertex cache is fast\n" );
+		common->Printf( "Vertex cache is FAST\n" );
 	} else {
 		common->Printf( "Vertex cache is SLOW\n" );
 	}

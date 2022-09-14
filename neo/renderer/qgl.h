@@ -44,17 +44,15 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 //MiniGl for the Future project
 #ifdef MINIGL_ENABLED
-#include <SDL_opengl.h>
-#else
-#if defined(EGL_WRAP_GL_ES)
-//OpenGLES2 is Here HunoPPC 2022
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+#include <SDL/SDL_opengl.h>
 #else
 //EGL_Wrap linked Here 2018 HunoPPC
 #include <EGL/gl.h>
+//OpenGLES2 is Here HunoPPC 2022
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #endif
-#endif
+
 
 #if defined( ID_DEDICATED ) && defined( _WIN32 )
 // restore WINGDIAPI
